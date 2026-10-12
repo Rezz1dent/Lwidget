@@ -1155,6 +1155,11 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"/>
 
+                        <include layout="@layout/settings_weather_fields_row"
+                            android:id="@+id/row_weather_fields"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+
                         <include layout="@layout/settings_slider_row"
                             android:id="@+id/row_weather_size"
                             android:layout_width="match_parent"

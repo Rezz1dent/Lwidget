@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - fix/breezy-weather
+      - feature/weather-fields
   workflow_dispatch:
 
 permissions:

@@ -2,7 +2,7 @@ name: KWGT Breezy Weather preset
 
 on:
   push:
-    branches: [feature/breezy-to-kwgt]
+    branches: [feature/breezy-to-kwgt, feature/kwgt-responsive]
     paths:
       - scripts/make_kwgt_breezy.py
       - .github/workflows/kwgt-breezy-preset.yml

@@ -2,7 +2,7 @@ name: KWGT Breezy Weather preset
 
 on:
   push:
-    branches: [feature/breezy-to-kwgt, feature/kwgt-responsive, feature/kwgt-polished-v5]
+    branches: [feature/breezy-to-kwgt, feature/kwgt-responsive, feature/kwgt-polished-v5, feature/kwgt-three-row-v7]
     paths:
       - scripts/make_kwgt_breezy.py
       - .github/workflows/kwgt-breezy-preset.yml
@@ -21,6 +21,6 @@ jobs:
       - name: Upload KWGT preset
         uses: actions/upload-artifact@v4
         with:
-          name: minimal-clock-breezy-polished-v5
+          name: breezy-minimal-three-rows-v7
           path: dist/*.kwgt
           if-no-files-found: error

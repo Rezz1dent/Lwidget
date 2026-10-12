@@ -36,38 +36,38 @@ def place(item, anchor, x, y, size):
 # Keep the original shape and flat root structure because these have
 # already been displayed successfully in KWGT on the user's Oppo.
 clock["internal_title"] = "Clock • left"
-place(clock, "TOPLEFT", 28, 12, 66)
+place(clock, "TOPLEFT", 34, 19, 62)
 
 # A SINGLE Kustom formula with the entire date format, no split expressions.
 date["internal_title"] = "Date • weekday, day, month"
 date["text_expression"] = '$df("EEE, dd MMM")$'
-place(date, "TOPLEFT", 34, 98, 21)
+place(date, "TOPLEFT", 38, 108, 20)
 
 # Always render something here so a missing Android next-alarm can be diagnosed.
 # '◷ —' means Kustom has not received the next alarm from Android.
 alarm["internal_title"] = "Next alarm • ◷ — if Android provides none"
 alarm["text_expression"] = '$if(si(alarmon)=1, "◷ " + df("HH:mm", si(alarmd)), "◷ —")$'
-place(alarm, "TOPLEFT", 34, 134, 18)
+place(alarm, "TOPLEFT", 38, 146, 17)
 
 temp["internal_title"] = "Breezy • current temperature"
 temp["text_expression"] = "$br(breezy, temp)$"
-place(temp, "TOPRIGHT", 80, 21, 37)
+place(temp, "TOPRIGHT", 80, 29, 40)
 temp["text_style"] = "BOLD"
 
 icon["internal_title"] = "Breezy • weather symbol"
 icon["text_expression"] = "$br(breezy, icon)$"
-place(icon, "TOPRIGHT", 22, 22, 35)
+place(icon, "TOPRIGHT", 22, 32, 34)
 
 feels["internal_title"] = "Breezy • feels like"
 feels["text_expression"] = "$br(breezy, feels)$"
-place(feels, "TOPRIGHT", 25, 79, 18)
+place(feels, "TOPRIGHT", 27, 87, 17)
 feels.pop("text_size_type", None)
 feels.pop("text_width", None)
 feels.pop("text_max_lines", None)
 
 condition["internal_title"] = "Breezy • current conditions"
 condition["text_expression"] = "$tc(ell, br(breezy, condition), 17)$"
-place(condition, "TOPRIGHT", 25, 118, 18)
+place(condition, "TOPRIGHT", 27, 121, 19)
 condition.pop("text_size_type", None)
 condition.pop("text_width", None)
 condition.pop("text_max_lines", None)
@@ -78,19 +78,73 @@ background["internal_title"] = "Transparent background (0% opacity)"
 # Some KWGT versions use the root background settings as well.
 root["background_color"] = "#00000000"
 
-# Readable but quiet palette: ivory for primary values, cool white for
-# supporting information. Thin near-black strokes keep it legible on photos.
-clock["paint_color"] = "#FFF7F9FF"
-temp["paint_color"] = "#FFF7F9FF"
-icon["paint_color"] = "#FFD5E9FF"
-date["paint_color"] = "#FFE6EDF9"
-alarm["paint_color"] = "#FFE0EAF7"
-feels["paint_color"] = "#FFE6ECF5"
-condition["paint_color"] = "#FFF0F4FB"
+# V6: Arctic Blue, a flat glassless design (there is deliberately NO panel).
+# The translucent accents are only hairlines, all text remains legible on photos.
+import copy
 
-# Kustom's action payload format is shared by text and group modules.
-# Explicit ACTION intent strings let Android pick the Clock / Calendar apps
-# installed on the user's device, rather than hardcoding Google apps.
+PRIMARY = "#FFFAFCFF"
+ICE = "#FF9DDDFF"
+SOFT = "#FFE1F3FF"
+MUTED = "#FFC4D9EC"
+
+clock["paint_color"] = PRIMARY
+clock["text_family"] = "sans-serif-light"
+clock["text_style"] = "NORMAL"
+temp["paint_color"] = PRIMARY
+temp["text_family"] = "sans-serif-medium"
+temp["text_style"] = "BOLD"
+icon["paint_color"] = ICE
+date["paint_color"] = SOFT
+date["text_family"] = "sans-serif-medium"
+alarm["paint_color"] = MUTED
+feels["paint_color"] = SOFT
+condition["paint_color"] = PRIMARY
+condition["text_family"] = "sans-serif-medium"
+
+# Small editorial labels and extra Breezy v2 measurements. Missing bridge
+# fields render as empty text and never overwrite core current conditions.
+def text_from(template, title, expression, anchor, x, y, size, color):
+    item = copy.deepcopy(template)
+    item["internal_title"] = title
+    item["text_expression"] = expression
+    place(item, anchor, x, y, size)
+    item["text_family"] = "sans-serif-medium"
+    item["text_style"] = "NORMAL"
+    item["paint_color"] = color
+    for field in ("text_width", "text_size_type", "text_max_lines"):
+        item.pop(field, None)
+    return item
+
+now_label = text_from(date, "Header • СЕЙЧАС", "СЕЙЧАС", "TOPRIGHT", 28, 7, 12, ICE)
+brand_label = text_from(date, "Signature • BREEZY / LIVE", "●  BREEZY / LIVE",
+                       "TOPLEFT", 38, 189, 13, ICE)
+wind = text_from(feels, "Wind • Breezy bridge v2", "$br(breezy, wind_text)$",
+                 "TOPRIGHT", 27, 158, 14, SOFT)
+tomorrow = text_from(feels, "Tomorrow • Breezy bridge v2", "$br(breezy, tomorrow)$",
+                     "TOPRIGHT", 27, 187, 13, MUTED)
+
+# Four fine, non-interactive accent marks; no opaque widget background.
+def bar(title, width, height, anchor, x, y, color):
+    item = copy.deepcopy(background)
+    item.update(
+        internal_title=title, shape_type="RECT",
+        shape_width=float(width), shape_height=float(height),
+        shape_corners=float(min(height / 2.0, 3.0)),
+        paint_color=color, paint_style="FILL",
+        position_anchor=anchor,
+        position_offset_x=float(x), position_offset_y=float(y)
+    )
+    item.pop("internal_events", None)
+    return item
+
+decorations = [
+    bar("Accent • clock left rail", 3, 56, "TOPLEFT", 20, 31, "#FF85D4FF"),
+    bar("Accent • left underline", 40, 2, "TOPLEFT", 38, 215, "#A685D4FF"),
+    bar("Accent • weather top", 46, 2, "TOPRIGHT", 27, 4, "#FF85D4FF"),
+    bar("Accent • weather bottom", 56, 2, "TOPRIGHT", 27, 216, "#A685D4FF"),
+]
+
+# Preserve verified KWGT touch syntax and original Android intents.
 breezy_intent = (
     "intent:#Intent;action=android.intent.action.MAIN;"
     "category=android.intent.category.LAUNCHER;package=org.breezyweather;end"
@@ -101,41 +155,41 @@ calendar_intent = (
     "category=android.intent.category.APP_CALENDAR;end"
 )
 
-def tap(module, android_intent):
-    module["internal_events"] = [
-        dict(type="SINGLE_TAP", action="LAUNCH_APP", intent=android_intent)
+def tap(item, intent):
+    item["internal_events"] = [
+        dict(type="SINGLE_TAP", action="LAUNCH_APP", intent=intent)
     ]
 
-for module in (temp, icon, feels, condition):
-    tap(module, breezy_intent)
-for module in (clock, alarm):
-    tap(module, clock_intent)
+for item in (temp, icon, feels, condition, wind, tomorrow, now_label, brand_label):
+    tap(item, breezy_intent)
+for item in (clock, alarm):
+    tap(item, clock_intent)
 tap(date, calendar_intent)
 
-# Keep every existing item as a *top-level* module: the earlier experiment
-# with nested Overlap Groups produced a blank widget on this OPPO launcher.
-# A stroked duplicate is drawn under each original text at the exact same
-# coordinates. This is a genuine subtle outline, not a blur over the text.
-import copy
-foreground = [clock, date, alarm, temp, icon, feels, condition]
+# Each text has a 1-2px stroke underneath. Root remains FLAT;
+# nested groups were shown to import as a blank widget on the OPPO.
+foreground = [
+    clock, date, alarm, temp, icon, feels, condition,
+    now_label, brand_label, wind, tomorrow
+]
 outlines = []
-for module in foreground:
-    outline = copy.deepcopy(module)
-    outline["internal_title"] = "Outline • " + module["internal_title"]
-    outline["paint_color"] = "#B8000000"
-    outline["paint_style"] = "STROKE"
-    outline["paint_stroke"] = 1.8 if module in (clock, temp, icon) else 1.5
-    outline.pop("internal_events", None)
-    outlines.append(outline)
-root["viewgroup_items"] = [background] + outlines + foreground
+for item in foreground:
+    stroke = copy.deepcopy(item)
+    stroke["internal_title"] = "Outline • " + item["internal_title"]
+    stroke["paint_color"] = "#BC050E1B"
+    stroke["paint_style"] = "STROKE"
+    stroke["paint_stroke"] = 1.65 if item in (clock, temp, icon) else 1.3
+    stroke.pop("internal_events", None)
+    outlines.append(stroke)
 
-# Leave all original module types and the previously working background intact.
+root["viewgroup_items"] = [background] + decorations + outlines + foreground
 preset["preset_info"].update(
-    title="Minimal Clock Breezy • Glassless v5",
-    description="Transparent, stroked text, tap to open Breezy, Clock and Calendar.",
+    title="Breezy Arctic • KWGT v6",
+    description="Transparent arctic-blue clock/weather widget with accents, dark text outlines, touch actions and optional wind/tomorrow data.",
 )
+
 os.makedirs("dist", exist_ok=True)
-out = "dist/Minimal_Clock_Breezy_Polished_v5.kwgt"
+out = "dist/Breezy_Arctic_KWGT_v6.kwgt"
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dest:
     for name in src.namelist():
         if name == "preset.json":
@@ -143,25 +197,21 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dest:
         else:
             dest.writestr(name, src.read(name))
 
-with zipfile.ZipFile(out) as result:
-    assert result.testzip() is None
-    check = json.loads(result.read("preset.json"))
-    flat = check["preset_root"]["viewgroup_items"]
-    assert len(flat) == 15
-    assert all(x["internal_type"] in ("TextModule", "ShapeModule") for x in flat)
-    assert flat[0]["paint_color"] == "#00000000"
-    assert sum(x.get("paint_style") == "STROKE" for x in flat) == 7
-    assert all(x.get("paint_stroke", 0) <= 2.0 for x in flat if x.get("paint_style") == "STROKE")
-    assert all("internal_events" in x for x in flat[8:])
-    assert all("internal_events" not in x for x in flat[1:8])
-    assert all(x["internal_events"][0]["action"] == "LAUNCH_APP" for x in flat[8:])
-    assert "org.breezyweather" in flat[11]["internal_events"][0]["intent"]
-    assert "SHOW_ALARMS" in flat[8]["internal_events"][0]["intent"]
-    assert "APP_CALENDAR" in flat[9]["internal_events"][0]["intent"]
-    assert flat[9]["text_expression"] == '$df("EEE, dd MMM")$'
-    assert flat[10]["text_expression"].startswith("$if(si(alarmon)=1")
-    assert flat[11]["position_anchor"] == "TOPRIGHT"
-    for field in ("temp", "icon", "feels", "condition"):
-        assert "br(breezy, " + field + ")" in json.dumps(check, ensure_ascii=False)
-print("V5_STYLED_FLAT_KWGT_VERIFIED", [(x["internal_type"], x.get("internal_title", "")) for x in flat])
+with zipfile.ZipFile(out) as archive:
+    assert archive.testzip() is None
+    check = json.loads(archive.read("preset.json"))
+    modules = check["preset_root"]["viewgroup_items"]
+    assert len(modules) == 27, len(modules)
+    assert all(x["internal_type"] in ("TextModule", "ShapeModule") for x in modules)
+    assert modules[0]["paint_color"] == "#00000000"
+    assert sum(x.get("paint_style") == "STROKE" for x in modules) == 11
+    assert sum(x.get("internal_events") is not None for x in modules) == 11
+    assert all("internal_events" not in x for x in modules[1:16])
+    for key in ("temp", "icon", "feels", "condition", "wind_text", "tomorrow"):
+        assert "br(breezy, " + key + ")" in json.dumps(check, ensure_ascii=False)
+    assert "SHOW_ALARMS" in json.dumps(check)
+    assert "APP_CALENDAR" in json.dumps(check)
+    assert "org.breezyweather" in json.dumps(check)
+print("V6_ARCTIC_FLAT_PRESET_VERIFIED",
+      [(x["internal_type"], x.get("internal_title", "")) for x in modules])
 print("FILE", out, "SIZE", os.stat(out).st_size)

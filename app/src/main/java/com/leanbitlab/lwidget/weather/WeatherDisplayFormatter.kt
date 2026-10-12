@@ -52,6 +52,15 @@ object WeatherDisplayFormatter {
         return parts.joinToString(" · ").ifBlank { "—" }
     }
 
+    fun currentTemperature(data: BreezyGadgetbridgeData): String =
+        data.currentTemp?.let { "${degrees(it)}C" } ?: "—"
+
+    fun feelsLike(data: BreezyGadgetbridgeData): String? =
+        data.feelsLikeTemp?.let { "Feels like ${degrees(it)}C" }
+
+    fun currentDescription(data: BreezyGadgetbridgeData): String? =
+        data.currentCondition?.trim()?.takeIf { it.isNotEmpty() }
+
     private fun degrees(kelvin: Int): String {
         val celsius = (kelvin - 273.15).roundToInt()
         return "${if (celsius > 0) "+" else ""}${celsius}°"

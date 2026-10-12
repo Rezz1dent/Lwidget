@@ -12,6 +12,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import com.leanbitlab.lwidget.calendar.CalendarFetcher
 import com.leanbitlab.lwidget.weather.BreezyWeatherFetcher
+import com.leanbitlab.lwidget.weather.KustomWeatherBridge
 import com.leanbitlab.lwidget.render.WidgetRenderer
 import com.leanbitlab.lwidget.stats.SystemStatsFetcher
 import com.leanbitlab.lwidget.tasks.TasksFetcher
@@ -121,6 +122,10 @@ class AwidgetProvider : AppWidgetProvider() {
                             val weatherJson = intent.getStringExtra("WeatherJson")
                             if (!weatherJson.isNullOrBlank()) {
                                 BreezyWeatherFetcher.saveLatestWeatherData(context, weatherJson)
+                                BreezyWeatherFetcher.fetchLocalWeather(context)?.let {
+                                    // KWGT accepts these variables via its documented SEND_VAR API.
+                                    KustomWeatherBridge.send(context, it)
+                                }
                             } else {
                                 Log.w(TAG, "Received weather broadcast without WeatherJson")
                             }

@@ -1,0 +1,26 @@
+name: KWGT Breezy Weather preset
+
+on:
+  push:
+    branches: [feature/breezy-to-kwgt]
+    paths:
+      - scripts/make_kwgt_breezy.py
+      - .github/workflows/kwgt-breezy-preset.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create Breezy-powered KWGT preset
+        run: python3 scripts/make_kwgt_breezy.py
+      - name: Upload KWGT preset
+        uses: actions/upload-artifact@v4
+        with:
+          name: minimal-clock-breezy-weather-kwgt
+          path: dist/*.kwgt
+          if-no-files-found: error

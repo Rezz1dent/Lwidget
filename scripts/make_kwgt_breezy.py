@@ -36,49 +36,49 @@ def place(item, anchor, x, y, size):
 # Keep the original shape and flat root structure because these have
 # already been displayed successfully in KWGT on the user's Oppo.
 clock["internal_title"] = "Clock • left"
-place(clock, "TOPLEFT", 28, 16, 70)
+place(clock, "TOPLEFT", 28, 12, 66)
 
 # A SINGLE Kustom formula with the entire date format, no split expressions.
 date["internal_title"] = "Date • weekday, day, month"
 date["text_expression"] = '$df("EEE, dd MMM")$'
-place(date, "TOPLEFT", 34, 142, 22)
+place(date, "TOPLEFT", 34, 98, 21)
 
 # Always render something here so a missing Android next-alarm can be diagnosed.
 # '◷ —' means Kustom has not received the next alarm from Android.
 alarm["internal_title"] = "Next alarm • ◷ — if Android provides none"
 alarm["text_expression"] = '$if(si(alarmon)=1, "◷ " + df("HH:mm", si(alarmd)), "◷ —")$'
-place(alarm, "TOPLEFT", 34, 182, 19)
+place(alarm, "TOPLEFT", 34, 134, 18)
 
 temp["internal_title"] = "Breezy • current temperature"
 temp["text_expression"] = "$br(breezy, temp)$"
-place(temp, "TOPRIGHT", 85, 25, 39)
+place(temp, "TOPRIGHT", 80, 21, 37)
 temp["text_style"] = "BOLD"
 
 icon["internal_title"] = "Breezy • weather symbol"
 icon["text_expression"] = "$br(breezy, icon)$"
-place(icon, "TOPRIGHT", 22, 27, 37)
+place(icon, "TOPRIGHT", 22, 22, 35)
 
 feels["internal_title"] = "Breezy • feels like"
 feels["text_expression"] = "$br(breezy, feels)$"
-place(feels, "TOPRIGHT", 25, 105, 19)
+place(feels, "TOPRIGHT", 25, 79, 18)
 feels.pop("text_size_type", None)
 feels.pop("text_width", None)
 feels.pop("text_max_lines", None)
 
 condition["internal_title"] = "Breezy • current conditions"
 condition["text_expression"] = "$tc(ell, br(breezy, condition), 17)$"
-place(condition, "TOPRIGHT", 25, 150, 18)
+place(condition, "TOPRIGHT", 25, 118, 18)
 condition.pop("text_size_type", None)
 condition.pop("text_width", None)
 condition.pop("text_max_lines", None)
 
 # Leave all original module types and the previously working background intact.
 preset["preset_info"].update(
-    title="Minimal Clock Breezy • Stable v3",
+    title="Minimal Clock Breezy • Aligned v4",
     description="Flat KWGT layout, left/right anchors, date, next alarm and Breezy bridge variables.",
 )
 os.makedirs("dist", exist_ok=True)
-out = "dist/Minimal_Clock_Breezy_Stable_v3.kwgt"
+out = "dist/Minimal_Clock_Breezy_Aligned_v4.kwgt"
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dest:
     for name in src.namelist():
         if name == "preset.json":
@@ -95,7 +95,13 @@ with zipfile.ZipFile(out) as result:
     assert flat[2]["text_expression"] == '$df("EEE, dd MMM")$'
     assert flat[3]["text_expression"].startswith("$if(si(alarmon)=1")
     assert flat[4]["position_anchor"] == "TOPRIGHT"
+    # On OPPO's KWGT preview the old offsets pushed date/alarm to the
+    # very bottom. Keep the secondary rows inside a conservative height budget.
+    assert flat[2]["position_offset_y"] <= 105
+    assert flat[3]["position_offset_y"] <= 140
+    assert flat[6]["position_offset_y"] <= 85
+    assert flat[7]["position_offset_y"] <= 125
     for field in ("temp", "icon", "feels", "condition"):
         assert "br(breezy, " + field + ")" in json.dumps(check, ensure_ascii=False)
-print("STABLE_FLAT_KWGT_VERIFIED", [(x["internal_type"], x.get("internal_title","")) for x in flat])
+print("ALIGNED_FLAT_KWGT_VERIFIED", [(x["internal_type"], x.get("internal_title","")) for x in flat])
 print("FILE", out, "SIZE", os.stat(out).st_size)

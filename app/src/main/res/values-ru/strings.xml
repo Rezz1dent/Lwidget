@@ -111,4 +111,14 @@
     <string name="btn_skip">Пропустить</string>
     <string name="btn_finish">Готово</string>
     <string name="btn_grant">Разрешить</string>
+    <string name="row_weather_fields">Показатели погоды (нажми для выбора)</string>
+    <string name="weather_field_temperature">Температура воздуха</string>
+    <string name="weather_field_condition">Текущая погода</string>
+    <string name="weather_field_feels_like">Ощущается как</string>
+    <string name="weather_field_precipitation">Вероятность осадков</string>
+    <string name="weather_field_humidity">Влажность</string>
+    <string name="weather_field_wind">Скорость ветра</string>
+    <string name="weather_field_pressure">Атмосферное давление</string>
+    <string name="weather_field_high_low">Максимум / минимум сегодня</string>
+    <string name="weather_fields_empty">Выбери хотя бы один показатель</string>
 </resources>

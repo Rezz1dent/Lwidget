@@ -1258,6 +1258,25 @@ class MainActivity : AppCompatActivity() {
         ).also { it.tag = "weather_condition" }
         bindToggle(R.id.row_weather_bold, getString(R.string.row_bold_text), "bold_weather", false)
         setupWeatherFieldsSelector()
+        bindSelector(
+            R.id.row_weather_layout, getString(R.string.weather_layout_label),
+            "weather_layout_idx",
+            listOf(getString(R.string.weather_layout_compact), getString(R.string.weather_layout_stacked)),
+            1
+        ) { applyWeatherLayoutVisibility() }
+        bindSlider(
+            R.id.row_weather_main_size, getString(R.string.weather_size_main),
+            "size_weather_main", 22f, 10f, 48f, suffix = "sp"
+        )
+        bindSlider(
+            R.id.row_weather_feels_size, getString(R.string.weather_size_feels),
+            "size_weather_feels", 14f, 9f, 32f, suffix = "sp"
+        )
+        bindSlider(
+            R.id.row_weather_description_size, getString(R.string.weather_size_description),
+            "size_weather_description", 14f, 9f, 32f, suffix = "sp"
+        )
+        applyWeatherLayoutVisibility()
 
         // Override weather listener for Breezy Weather check
         weatherSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -1294,6 +1313,7 @@ class MainActivity : AppCompatActivity() {
             }
             prefs.edit().putBoolean("show_weather_condition", isChecked).apply()
             updateFeatureRowVisibility(weatherSwitch, isChecked, R.id.row_weather_size)
+            applyWeatherLayoutVisibility()
             updateWidget()
             updateToggleAvailability()
             if (isChecked) {
@@ -1305,6 +1325,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    private fun applyWeatherLayoutVisibility() {
+        val enabled = prefs.getBoolean("show_weather_condition", false)
+        val compact = prefs.getInt("weather_layout_idx", 1) == 0
+        val compactRows = listOf(R.id.row_weather_fields, R.id.row_weather_size)
+        val stackedRows = listOf(
+            R.id.row_weather_main_size, R.id.row_weather_feels_size, R.id.row_weather_description_size
+        )
+        compactRows.forEach { findViewById<View>(it)?.visibility =
+            if (enabled && compact) View.VISIBLE else View.GONE
+        }
+        stackedRows.forEach { findViewById<View>(it)?.visibility =
+            if (enabled && !compact) View.VISIBLE else View.GONE
+        }
+    }
+
     private fun setupWeatherFieldsSelector() {
         val row = findViewById<View>(R.id.row_weather_fields)
         val summary = row.findViewById<TextView>(R.id.weather_fields_summary)

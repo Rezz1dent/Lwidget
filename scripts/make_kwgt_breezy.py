@@ -1,110 +1,101 @@
 #!/usr/bin/env python3
-"""Build a responsive two-column KWGT preset from an existing valid .kwgt."""
+"""Generate a stable KWGT preset with flat, individually anchored items.
+
+The last experimental version created nested OverlapGroupModule objects and
+displayed an empty widget on Android. This version deliberately uses only
+the proven top-level modules from the existing working preset.
+"""
 import io
 import json
 import os
 import urllib.request
 import zipfile
 
-SOURCE_URL = (
+URL = (
     "https://raw.githubusercontent.com/Rezz1dent/Lwidget/"
     "assets/kwgt-accuweather/kwgt/Minimal_Clock_AccuWeather_v2.kwgt"
 )
-with urllib.request.urlopen(SOURCE_URL, timeout=50) as response:
-    source_data = response.read()
-source = zipfile.ZipFile(io.BytesIO(source_data))
-preset = json.loads(source.read("preset.json").decode("utf-8"))
-old = preset["preset_root"]["viewgroup_items"]
-assert len(old) >= 8
+with urllib.request.urlopen(URL, timeout=45) as response:
+    base = response.read()
 
-# Preserve already proven KWGT text modules, avoiding speculative module schemas.
-clock, date, alarm = [dict(old[index]) for index in (1, 2, 3)]
-temp, icon, feels, condition = [dict(old[index]) for index in (4, 5, 6, 7)]
-
-def position(element, anchor, x, y):
-    element.update(
-        position_anchor=anchor, position_offset_x=float(x),
-        position_offset_y=float(y)
-    )
-    return element
-
-def anchor_shape(width, height):
-    return dict(
-        internal_type="ShapeModule", internal_title="Invisible layout guide",
-        shape_type="RECT", shape_width=float(width), shape_height=float(height),
-        shape_corners=0, paint_color="#00000000", position_anchor="CENTER"
-    )
-
-# Groups are anchored to opposing edges of the ACTUAL KWGT widget bounds,
-# not to x coordinates of a fixed 4-column widget.
-left = dict(
-    internal_type="OverlapGroupModule", internal_title="LEFT • Clock / Date / Alarm",
-    position_anchor="TOPLEFT", position_offset_x=24.0,
-    position_offset_y=5.0, viewgroup_items=[
-        anchor_shape(270, 218),
-        position(clock, "TOPLEFT", 3, 15),
-        position(date, "TOPLEFT", 5, 132),
-        position(alarm, "TOPLEFT", 5, 177)
-    ]
-)
-right = dict(
-    internal_type="OverlapGroupModule", internal_title="RIGHT • Breezy Weather",
-    position_anchor="TOPRIGHT", position_offset_x=22.0,
-    position_offset_y=5.0, viewgroup_items=[
-        anchor_shape(250, 218),
-        position(temp, "TOPRIGHT", 55, 22),
-        position(icon, "TOPRIGHT", 1, 20),
-        position(feels, "TOPRIGHT", 0, 105),
-        position(condition, "TOPRIGHT", 0, 150)
-    ]
-)
-
-# Do not use a fixed-width centered background shape: its dimensions don't
-# follow 5-column launcher resize. KWGT's root background fills the viewport.
+src = zipfile.ZipFile(io.BytesIO(base))
+preset = json.loads(src.read("preset.json").decode("utf-8"))
 root = preset["preset_root"]
-root["background_type"] = "SOLID"
-root["background_color"] = "#E01C2432"
-root["viewgroup_items"] = [left, right]
+items = root["viewgroup_items"]
+assert len(items) == 8, f"Unexpected base preset item count {len(items)}"
+assert all(item["internal_type"] in ("ShapeModule", "TextModule") for item in items)
 
+background, clock, date, alarm, temp, icon, feels, condition = items
+
+def place(item, anchor, x, y, size):
+    item["position_anchor"] = anchor
+    item["position_offset_x"] = float(x)
+    item["position_offset_y"] = float(y)
+    item["text_size"] = float(size)
+
+# Keep the original shape and flat root structure because these have
+# already been displayed successfully in KWGT on the user's Oppo.
+clock["internal_title"] = "Clock • left"
+place(clock, "TOPLEFT", 28, 16, 70)
+
+# A SINGLE Kustom formula with the entire date format, no split expressions.
+date["internal_title"] = "Date • weekday, day, month"
+date["text_expression"] = '$df("EEE, dd MMM")$'
+place(date, "TOPLEFT", 34, 142, 22)
+
+# Always render something here so a missing Android next-alarm can be diagnosed.
+# '◷ —' means Kustom has not received the next alarm from Android.
+alarm["internal_title"] = "Next alarm • ◷ — if Android provides none"
+alarm["text_expression"] = '$if(si(alarmon)=1, "◷ " + df("HH:mm", si(alarmd)), "◷ —")$'
+place(alarm, "TOPLEFT", 34, 182, 19)
+
+temp["internal_title"] = "Breezy • current temperature"
 temp["text_expression"] = "$br(breezy, temp)$"
-temp["internal_title"] = "Current temperature • Breezy"
-temp["text_size"] = 41.0
+place(temp, "TOPRIGHT", 85, 25, 39)
+temp["text_style"] = "BOLD"
+
+icon["internal_title"] = "Breezy • weather symbol"
 icon["text_expression"] = "$br(breezy, icon)$"
-icon["internal_title"] = "Current weather symbol • Breezy"
-icon["text_size"] = 41.0
+place(icon, "TOPRIGHT", 22, 27, 37)
+
+feels["internal_title"] = "Breezy • feels like"
 feels["text_expression"] = "$br(breezy, feels)$"
-feels["internal_title"] = "Feels like • Breezy"
-feels["text_size"] = 20.0
+place(feels, "TOPRIGHT", 25, 105, 19)
 feels.pop("text_size_type", None)
 feels.pop("text_width", None)
-condition["text_expression"] = "$tc(ell, br(breezy, condition), 22)$"
-condition["internal_title"] = "Description • Breezy (truncated)"
-condition["text_size"] = 20.0
+feels.pop("text_max_lines", None)
+
+condition["internal_title"] = "Breezy • current conditions"
+condition["text_expression"] = "$tc(ell, br(breezy, condition), 17)$"
+place(condition, "TOPRIGHT", 25, 150, 18)
 condition.pop("text_size_type", None)
 condition.pop("text_width", None)
-date["text_expression"] = "$df(EEE)$, $df(dd MMM)$"
+condition.pop("text_max_lines", None)
 
+# Leave all original module types and the previously working background intact.
 preset["preset_info"].update(
-    title="Minimal Clock • Breezy • Responsive 5-column",
-    description="Independent left/right anchor groups. Requires Breezy-to-KWGT bridge.",
-    width=720, height=235, features="LOCATION"
+    title="Minimal Clock Breezy • Stable v3",
+    description="Flat KWGT layout, left/right anchors, date, next alarm and Breezy bridge variables.",
 )
-out = "dist/Minimal_Clock_Breezy_Responsive.kwgt"
 os.makedirs("dist", exist_ok=True)
-with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as result:
-    for name in source.namelist():
+out = "dist/Minimal_Clock_Breezy_Stable_v3.kwgt"
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as dest:
+    for name in src.namelist():
         if name == "preset.json":
-            result.writestr(name, json.dumps(preset, ensure_ascii=False, separators=(",", ":")))
+            dest.writestr(name, json.dumps(preset, ensure_ascii=False, separators=(",", ":")))
         else:
-            result.writestr(name, source.read(name))
+            dest.writestr(name, src.read(name))
+
 with zipfile.ZipFile(out) as result:
     assert result.testzip() is None
-    obj = json.loads(result.read("preset.json"))
-    assert len(obj["preset_root"]["viewgroup_items"]) == 2
-    assert all(x["internal_type"] == "OverlapGroupModule"
-               for x in obj["preset_root"]["viewgroup_items"])
-    fields = json.dumps(obj, ensure_ascii=False)
-    for key in ("temp", "feels", "condition", "icon"):
-        assert "br(breezy, " + key + ")" in fields
-print("Responsive left/right groups and weather expressions verified")
-print("Created", out, os.path.getsize(out), "bytes")
+    check = json.loads(result.read("preset.json"))
+    flat = check["preset_root"]["viewgroup_items"]
+    assert len(flat) == 8
+    assert all(x["internal_type"] in ("TextModule", "ShapeModule") for x in flat)
+    assert flat[2]["text_expression"] == '$df("EEE, dd MMM")$'
+    assert flat[3]["text_expression"].startswith("$if(si(alarmon)=1")
+    assert flat[4]["position_anchor"] == "TOPRIGHT"
+    for field in ("temp", "icon", "feels", "condition"):
+        assert "br(breezy, " + field + ")" in json.dumps(check, ensure_ascii=False)
+print("STABLE_FLAT_KWGT_VERIFIED", [(x["internal_type"], x.get("internal_title","")) for x in flat])
+print("FILE", out, "SIZE", os.stat(out).st_size)

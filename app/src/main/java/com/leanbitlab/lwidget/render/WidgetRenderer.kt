@@ -354,7 +354,9 @@ object WidgetRenderer {
                 R.id.text_weather_temperature, android.util.TypedValue.COMPLEX_UNIT_SP,
                 if (stacked) sizeWeatherMain else sizeWeather
             )
-            views.setTextColor(R.id.text_weather_temperature, secondaryColor)
+            // Treat the temperature like the clock (primary theme color); use the
+            // same secondary color as the other information blocks below it.
+            views.setTextColor(R.id.text_weather_temperature, if (stacked) primaryColor else secondaryColor)
             views.setViewVisibility(
                 R.id.text_weather_temperature, if (iconOnly) View.GONE else View.VISIBLE
             )
@@ -400,8 +402,23 @@ object WidgetRenderer {
             }
 
 
+            // Scale the weather symbol with the first line's font size.
+            // RemoteViews dimension setters are available on Android 12+ (API 31);
+            // the XML's default dimension is retained on older devices.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val iconSizeSp = (if (stacked) sizeWeatherMain else sizeWeather)
+                    .coerceIn(10f, 48f)
+                views.setViewLayoutWidth(
+                    R.id.icon_weather, iconSizeSp,
+                    android.util.TypedValue.COMPLEX_UNIT_SP
+                )
+                views.setViewLayoutHeight(
+                    R.id.icon_weather, iconSizeSp,
+                    android.util.TypedValue.COMPLEX_UNIT_SP
+                )
+            }
             views.setImageViewResource(R.id.icon_weather, weatherDrawableRes)
-            views.setInt(R.id.icon_weather, "setColorFilter", secondaryColor)
+            views.setInt(R.id.icon_weather, "setColorFilter", if (stacked) primaryColor else secondaryColor)
             views.setViewVisibility(R.id.icon_weather, View.VISIBLE)
 
             val launchIntent = context.packageManager.getLaunchIntentForPackage("org.breezyweather")

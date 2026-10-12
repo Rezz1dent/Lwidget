@@ -1,0 +1,30 @@
+name: Breezy to KWGT mini bridge
+on:
+  push:
+    branches: [feature/kwgt-responsive]
+    paths:
+      - bridge/**
+      - settings.gradle.kts
+      - .github/workflows/breezy-kwgt-mini-bridge.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Build lightweight standalone bridge
+        run: bash ./gradlew :bridge:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: breezy-kwgt-mini-bridge-debug
+          path: bridge/build/outputs/apk/debug/*.apk
+          if-no-files-found: error

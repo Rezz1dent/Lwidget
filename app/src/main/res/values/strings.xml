@@ -124,4 +124,10 @@
     <string name="weather_field_pressure">Atmospheric pressure</string>
     <string name="weather_field_high_low">Daily high / low</string>
     <string name="weather_fields_empty">Choose at least one metric</string>
+    <string name="weather_layout_label">Weather layout</string>
+    <string name="weather_layout_compact">One line (custom fields)</string>
+    <string name="weather_layout_stacked">Three lines</string>
+    <string name="weather_size_main">Temperature size</string>
+    <string name="weather_size_feels">Feels-like size</string>
+    <string name="weather_size_description">Weather condition size</string>
 </resources>

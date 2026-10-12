@@ -49,7 +49,8 @@ android {
             }
         }
         debug {
-            applicationIdSuffix = ".debug"
+            // Use the original package ID so Breezy can target this test build.
+            // The official APK must be uninstalled first because its signature differs.
             versionNameSuffix = "-DEBUG"
         }
     }

@@ -116,7 +116,7 @@ def font_icon(title, expression, x, y, size):
 current_glyph = font_icon("Row 1 • Flat outline current weather",
                           "$br(breezy, icon_flat)$", 23, 29, 32)
 tomorrow_glyph = font_icon("Row 3 • Flat outline tomorrow weather",
-                           $if(br(breezy, tomorrow_icon_flat)=\\"grain\\", \\"cloud_queue\\", br(breezy, tomorrow_icon_flat))$", 23, 128, 24)
+                           '$if(br(breezy, tomorrow_icon_flat)="grain", "cloud_queue", br(breezy, tomorrow_icon_flat))$', 23, 128, 24)
 
 # Fully transparent root, the proven shape object is retained as a backing
 # item for Kustom's importer but draws absolutely nothing.

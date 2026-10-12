@@ -32,6 +32,15 @@
         android:layout_height="match_parent"
         android:padding="0dp">
 
+    <!-- Header: time and date occupy a single non-overlapping left column. -->
+    <LinearLayout
+        android:id="@+id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:orientation="vertical"
+        android:clipChildren="true">
     <!-- Time (Top Left) -->
     
     <LinearLayout
@@ -53,145 +62,6 @@
         android:textColor="#FFFFFF"
         android:textStyle="bold"
         android:includeFontPadding="false"/>
-    </LinearLayout>
-
-    <!-- Battery (Top Right) -->
-    <TextView
-        android:id="@+id/text_battery"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="monospace"
-        android:text="--%"
-        android:textColor="#FFFFFF"
-        android:textSize="48sp"
-        android:includeFontPadding="false"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"/>
-
-    <!-- Weather Condition (Below Battery) -->
-    <LinearLayout
-        android:id="@+id/layout_weather_condition"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true">
-        <TextView
-            android:id="@+id/text_weather_condition"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:textColor="#CCFFFFFF"
-            android:textSize="18sp"
-            android:includeFontPadding="false" />
-        <ImageView
-            android:id="@+id/icon_weather"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_marginStart="3dp"
-            android:src="@drawable/ic_weather_sunny"
-            android:importantForAccessibility="no" />
-    </LinearLayout>
-
-    <!-- Temp (Below Battery) -->
-    <TextView
-        android:id="@+id/text_temp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:fontFamily="monospace"
-        android:text="--°C"
-        android:textColor="#CCFFFFFF"
-        android:textSize="18sp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"/>
-
-    <!-- Data Usage (Below Temp) -->
-    <TextView
-        android:id="@+id/text_data_usage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="-- MB"
-        android:textColor="#CCFFFFFF"
-        android:textSize="14sp"
-        android:visibility="gone"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        />
-    <TextView
-        android:id="@+id/text_storage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#CCFFFFFF"
-        android:textSize="14sp"
-        android:visibility="gone"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        />
-    <TextView
-        android:id="@+id/text_ram"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text=""
-        android:textColor="#CCFFFFFF"
-        android:textSize="14sp"
-        android:visibility="gone"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        />
-
-    <!-- Steps (Below Storage) -->
-    <LinearLayout
-        android:id="@+id/layout_steps"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        >
-        <TextView
-            android:id="@+id/text_steps"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0"
-            android:textColor="#CCFFFFFF"
-            android:textSize="14sp"
-            android:includeFontPadding="false"/>
-        <ImageView
-            android:id="@+id/icon_steps"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginStart="3dp"
-            android:src="@drawable/ic_steps"
-            android:importantForAccessibility="no"/>
-    </LinearLayout>
-    <!-- Screen Time (Below Steps) -->
-    <LinearLayout
-        android:id="@+id/layout_screen_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        >
-        <TextView
-            android:id="@+id/text_screen_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0h 0m"
-            android:textColor="#CCFFFFFF"
-            android:textSize="14sp"
-            android:includeFontPadding="false"/>
-        <ImageView
-            android:id="@+id/icon_screen_time"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginStart="3dp"
-            android:src="@drawable/ic_time"
-            android:importantForAccessibility="no"/>
     </LinearLayout>
 
     <!-- Date (Below Time) -->
@@ -275,16 +145,197 @@
         </LinearLayout>
     </LinearLayout>
 
+    </LinearLayout>
+
+    <!-- Battery (Top Right) -->
+    <TextView
+        android:id="@+id/text_battery"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:text="--%"
+        android:textColor="#FFFFFF"
+        android:textSize="48sp"
+        android:includeFontPadding="false"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"/>
+
+    <!-- Three-line weather content; constrained to the right of the whole clock/date header. -->
+    <LinearLayout
+        android:id="@+id/layout_weather_condition"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="end"
+        android:clipChildren="true"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentTop="true"
+        android:visibility="gone">
+        <LinearLayout
+            android:id="@+id/weather_top_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="end|center_vertical">
+            <TextView
+                android:id="@+id/text_weather_temperature"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="#CCFFFFFF"
+                android:textSize="20sp"
+                android:includeFontPadding="false" />
+            <ImageView
+                android:id="@+id/icon_weather"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="4dp"
+                android:src="@drawable/ic_weather_sunny"
+                android:importantForAccessibility="no" />
+        </LinearLayout>
+        <TextView
+            android:id="@+id/text_weather_feels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#CCFFFFFF"
+            android:textSize="15sp"
+            android:includeFontPadding="false" />
+        <TextView
+            android:id="@+id/text_weather_condition"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:includeFontPadding="false" />
+    </LinearLayout>
+
+    <!-- Temp (Below Battery) -->
+    <TextView
+        android:id="@+id/text_temp"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="monospace"
+        android:text="--°C"
+        android:textColor="#CCFFFFFF"
+        android:textSize="18sp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"/>
+
+    <!-- Data Usage (Below Temp) -->
+    <TextView
+        android:id="@+id/text_data_usage"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="-- MB"
+        android:textColor="#CCFFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        />
+    <TextView
+        android:id="@+id/text_storage"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#CCFFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        />
+    <TextView
+        android:id="@+id/text_ram"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="#CCFFFFFF"
+        android:textSize="14sp"
+        android:visibility="gone"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        />
+
+    <!-- Steps (Below Storage) -->
+    <LinearLayout
+        android:id="@+id/layout_steps"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        >
+        <TextView
+            android:id="@+id/text_steps"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:includeFontPadding="false"/>
+        <ImageView
+            android:id="@+id/icon_steps"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="3dp"
+            android:src="@drawable/ic_steps"
+            android:importantForAccessibility="no"/>
+    </LinearLayout>
+    <!-- Screen Time (Below Steps) -->
+    <LinearLayout
+        android:id="@+id/layout_screen_time"
+        android:layout_toEndOf="@id/left_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        >
+        <TextView
+            android:id="@+id/text_screen_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0h 0m"
+            android:textColor="#CCFFFFFF"
+            android:textSize="14sp"
+            android:includeFontPadding="false"/>
+        <ImageView
+            android:id="@+id/icon_screen_time"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginStart="3dp"
+            android:src="@drawable/ic_time"
+            android:importantForAccessibility="no"/>
+    </LinearLayout>
+
     <!-- Calendar Events (for expanded sizes - dynamically filled) -->
     <LinearLayout
         android:id="@+id/events_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
-        android:layout_toStartOf="@id/text_battery"
+        android:layout_alignEnd="@id/left_header"
         android:fontFamily="monospace"
         android:orientation="vertical"
-        android:layout_below="@id/date_container"
+        android:layout_below="@id/left_header"
         android:layout_marginTop="8dp"
         android:clipChildren="true"
         android:clipToPadding="true">

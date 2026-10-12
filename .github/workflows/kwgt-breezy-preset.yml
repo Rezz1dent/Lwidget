@@ -21,6 +21,6 @@ jobs:
       - name: Upload KWGT preset
         uses: actions/upload-artifact@v4
         with:
-          name: minimal-clock-breezy-responsive-5col
+          name: minimal-clock-breezy-stable-v3
           path: dist/*.kwgt
           if-no-files-found: error

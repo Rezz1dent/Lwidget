@@ -9,8 +9,9 @@
             android:name="com.leanbitlab.breezybridge.MainActivity"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <!-- Shown as "Open app settings" in Android's App info, not in the launcher. -->
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES"/>
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
         <receiver

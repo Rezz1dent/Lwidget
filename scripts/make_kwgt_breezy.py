@@ -65,17 +65,17 @@ clock["text_family"] = "sans-serif-light"
 tap(clock, CLOCK)
 
 arrange(date, "Date • next to alarm", '$df("EEE, dd MMM")$',
-        "TOPLEFT", 34, 109, 17, COLOR_ICE)
+        "TOPLEFT", 34, 93, 17, COLOR_ICE)
 tap(date, CALENDAR)
 
 arrange(alarm, "Next alarm • next to date",
         '$if(si(alarmon)=1, "◷ " + df("HH:mm", si(alarmd)), "◷ —")$',
-        "TOPLEFT", 183, 109, 16, COLOR_SOFT)
+        "TOPLEFT", 125, 93, 16, COLOR_SOFT)
 tap(alarm, CLOCK)
 
 today = arrange(copy.deepcopy(feels), "Today • Breezy high/low",
                 "$br(breezy, today_compact)$",
-                "TOPLEFT", 34, 152, 18, COLOR_SOFT)
+                "TOPLEFT", 34, 132, 18, COLOR_SOFT)
 tap(today, BREEZY)
 
 # Right column, exactly 3 lines:
@@ -91,7 +91,7 @@ tap(details, BREEZY)
 
 tomorrow = arrange(condition, "Row 3 • Tomorrow maximum/minimum",
                    "$br(breezy, tomorrow_compact)$",
-                   "TOPRIGHT", 68, 148, 17, COLOR_SOFT)
+                   "TOPRIGHT", 68, 130, 17, COLOR_SOFT)
 tap(tomorrow, BREEZY)
 
 # Vector glyphs built into KWGT (Material icon pack). The icon name comes
@@ -116,7 +116,7 @@ def font_icon(title, expression, x, y, size):
 current_glyph = font_icon("Row 1 • Flat outline current weather",
                           "$br(breezy, icon_flat)$", 23, 29, 32)
 tomorrow_glyph = font_icon("Row 3 • Flat outline tomorrow weather",
-                           "$br(breezy, tomorrow_icon_flat)$", 23, 146, 24)
+                           $if(br(breezy, tomorrow_icon_flat)="grain", "cloud_queue", br(breezy, tomorrow_icon_flat))$", 23, 128, 24)
 
 # Fully transparent root, the proven shape object is retained as a backing
 # item for Kustom's importer but draws absolutely nothing.
@@ -140,7 +140,7 @@ root["viewgroup_items"] = [background] + outlines + texts + [
     current_glyph, tomorrow_glyph
 ]
 preset["preset_info"].update(
-    title="Breezy Minimal v7 • 3 rows",
+    title="Breezy Minimal v8 • Aligned",
     description=(
         "Flat, transparent, two-column widget. Date+alarm on one line; "
         "Today high/low below. Right: temperature, Like+wind+humidity, "
@@ -148,7 +148,7 @@ preset["preset_info"].update(
     )
 )
 
-out = "dist/Breezy_Minimal_Three_Rows_v7.kwgt"
+out = "dist/Breezy_Minimal_Aligned_v8.kwgt"
 os.makedirs("dist", exist_ok=True)
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as output:
     for name in archive.namelist():
@@ -170,6 +170,18 @@ with zipfile.ZipFile(out) as result:
     assert all(item["internal_type"] in ("TextModule", "ShapeModule", "FontIconModule") for item in m)
     assert m[0]["paint_color"] == "#00000000"
     assert m[9]["position_offset_y"] == m[10]["position_offset_y"]  # date and alarm
+    # Empirical safe layout for the OPPO 5-column launcher: the alarm stays
+    # to the left of the weather details, and all three baselines align.
+    assert m[10]["position_offset_x"] == 125
+    assert m[9]["position_offset_y"] == 93
+    assert m[11]["position_offset_y"] == 132
+    assert m[13]["position_offset_y"] == 94
+    assert m[14]["position_offset_y"] == 130
+    assert m[16]["position_offset_y"] == 128
+    assert "cloud_queue" in m[16]["internal_formulas"]["icon_icon"]
+    # The original v7 put the alarm at x=183. That was visibly intersecting
+    # the right-side information on the actual KWGT editor screenshot.
+    assert m[10]["position_offset_x"] + 65 < 200
     expressions = json.dumps(obj, ensure_ascii=False)
     for variable in (
         "temp", "details", "today_compact", "tomorrow_compact",
@@ -180,5 +192,5 @@ with zipfile.ZipFile(out) as result:
     assert "org.breezyweather" in expressions
     assert "SHOW_ALARMS" in expressions and "APP_CALENDAR" in expressions
     assert "BREEZY / LIVE" not in expressions
-print("V7_PRESET_VALIDATED", [(x["internal_type"], x.get("internal_title")) for x in m])
+print("V8_PRESET_VALIDATED", [(x["internal_type"], x.get("internal_title")) for x in m])
 print("FILE", out, os.stat(out).st_size, "bytes")

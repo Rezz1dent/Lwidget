@@ -95,7 +95,7 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as result:
     for name in source.namelist():
         if name == "preset.json":
             result.writestr(name, json.dumps(preset, ensure_ascii=False, separators=(",", ":")))
-        elif name != "preset_thumb.png":
+        else:
             result.writestr(name, source.read(name))
 with zipfile.ZipFile(out) as result:
     assert result.testzip() is None

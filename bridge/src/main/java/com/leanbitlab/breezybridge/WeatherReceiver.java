@@ -27,7 +27,10 @@ public final class WeatherReceiver extends BroadcastReceiver {
         "humidity", "precip", "wind", "wind_kmh", "wind_ms",
         "wind_direction", "wind_degrees", "wind_text", "location",
         "tomorrow_max", "tomorrow_min", "tomorrow_range", "tomorrow",
-        "tomorrow_precip", "tomorrow_icon"
+        "tomorrow_precip", "tomorrow_icon",
+        "like", "details", "wind_arrow", "today_max", "today_min",
+        "today_range", "today_compact", "tomorrow_compact",
+        "icon_flat", "tomorrow_icon_flat"
     };
 
     @Override public void onReceive(Context context, Intent intent) {
@@ -87,12 +90,15 @@ public final class WeatherReceiver extends BroadcastReceiver {
             vars.put("temp", degreesC(data.optDouble("currentTemp")));
         if (has(data, "feelsLikeTemp"))
             vars.put("feels", "Feels like " + degreesC(data.optDouble("feelsLikeTemp")));
+        if (has(data, "feelsLikeTemp"))
+            vars.put("like", degreesC(data.optDouble("feelsLikeTemp")));
         if (has(data, "currentCondition"))
             vars.put("condition", data.optString("currentCondition").trim());
         if (has(data, "currentConditionCode")) {
             int code = data.optInt("currentConditionCode");
             vars.put("code", Integer.toString(code));
             vars.put("icon", weatherIcon(code));
+            vars.put("icon_flat", weatherFlatIcon(code));
         }
         if (has(data, "currentHumidity"))
             vars.put("humidity", data.optString("currentHumidity") + "%");
@@ -109,12 +115,37 @@ public final class WeatherReceiver extends BroadcastReceiver {
             int degrees = data.optInt("windDirection");
             vars.put("wind_direction", compass(degrees));
             vars.put("wind_degrees", normalizeDegrees(degrees) + "°");
+            vars.put("wind_arrow", windFlowArrow(degrees));
         }
         if (!vars.get("wind_ms").isEmpty()) {
             vars.put("wind_text",
                 (vars.get("wind_direction").isEmpty() ? "" : vars.get("wind_direction") + " · ") +
                     vars.get("wind_ms"));
         }
+        StringBuilder details = new StringBuilder();
+        if (!vars.get("like").isEmpty())
+            details.append("Like ").append(vars.get("like"));
+        if (!vars.get("wind_ms").isEmpty()) {
+            if (details.length() > 0) details.append("  ");
+            details.append(vars.get("wind_arrow")).append(vars.get("wind_arrow").isEmpty() ? "" : " ");
+            details.append(vars.get("wind_ms").replace(" м/с", "м/с"));
+        }
+        if (!vars.get("humidity").isEmpty()) {
+            if (details.length() > 0) details.append("  ");
+            details.append("💧").append(vars.get("humidity"));
+        }
+        vars.put("details", details.toString());
+
+        if (has(data, "todayMaxTemp"))
+            vars.put("today_max", degreesC(data.optDouble("todayMaxTemp")));
+        if (has(data, "todayMinTemp"))
+            vars.put("today_min", degreesC(data.optDouble("todayMinTemp")));
+        String todayRange = shortRange(data, "todayMaxTemp", "todayMinTemp");
+        if (!todayRange.isEmpty()) {
+            vars.put("today_range", todayRange);
+            vars.put("today_compact", "Today: " + todayRange);
+        }
+
         if (has(data, "location"))
             vars.put("location", data.optString("location"));
 
@@ -139,8 +170,13 @@ public final class WeatherReceiver extends BroadcastReceiver {
                 }
                 if (has(tomorrow, "precipProbability"))
                     vars.put("tomorrow_precip", tomorrow.optString("precipProbability") + "%");
-                if (has(tomorrow, "conditionCode"))
+                String compactRange = shortRange(tomorrow, "maxTemp", "minTemp");
+                if (!compactRange.isEmpty())
+                    vars.put("tomorrow_compact", "Tomorrow: " + compactRange);
+                if (has(tomorrow, "conditionCode")) {
                     vars.put("tomorrow_icon", weatherIcon(tomorrow.optInt("conditionCode")));
+                    vars.put("tomorrow_icon_flat", weatherFlatIcon(tomorrow.optInt("conditionCode")));
+                }
             }
         }
         return vars;
@@ -152,7 +188,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
 
     private static String degreesC(double kelvin) {
         long celsius = Math.round(kelvin - 273.15);
-        return (celsius > 0 ? "+" : "") + celsius + "°C";
+        return celsius + "°C";
     }
 
     private static String speedMs(double kmh) {
@@ -167,6 +203,43 @@ public final class WeatherReceiver extends BroadcastReceiver {
     private static String compass(int degrees) {
         String[] directions = {"С", "СВ", "В", "ЮВ", "Ю", "ЮЗ", "З", "СЗ"};
         return directions[((normalizeDegrees(degrees) + 22) / 45) % 8];
+    }
+
+    /**
+     * Only generate ranges from actually present values. The compact format
+     * saves precious space in KWGT: 8/2°C or -2/-6°C, no leading plus signs.
+     */
+    private static String shortRange(JSONObject obj, String highKey, String lowKey) {
+        if (!has(obj, highKey) && !has(obj, lowKey)) return "";
+        String hi = has(obj, highKey) ?
+            Long.toString(Math.round(obj.optDouble(highKey) - 273.15)) : "—";
+        String lo = has(obj, lowKey) ?
+            Long.toString(Math.round(obj.optDouble(lowKey) - 273.15)) : "—";
+        return hi + "/" + lo + "°C";
+    }
+
+    /** Meteorological bearings indicate the direction FROM which wind comes.
+     * The arrow instead points where the air actually BLOWS (downwind).
+     */
+    private static String windFlowArrow(int bearing) {
+        String[] arrows = {"↑", "↗", "→", "↘", "↓", "↙", "←", "↖"};
+        int downwindBearing = normalizeDegrees(bearing + 180);
+        return arrows[((downwindBearing + 22) / 45) % 8];
+    }
+
+    /**
+     * Material Icons glyph names supplied by KWGT, avoiding colored emoji.
+     * 'cloud_queue' is a thin outlined cloud close to the user reference.
+     */
+    private static String weatherFlatIcon(int code) {
+        if (code == 800) return "wb_sunny";
+        if (code == 801 || code == 802) return "filter_drama";
+        if (code >= 200 && code <= 232) return "flash_on";
+        if (code >= 300 && code <= 531) return "grain";
+        if (code >= 600 && code <= 622) return "ac_unit";
+        if (code == 741 || code == 751) return "blur_on";
+        if (code == 771) return "air";
+        return "cloud_queue";
     }
 
     private static String weatherIcon(int code) {

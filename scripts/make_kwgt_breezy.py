@@ -15,6 +15,9 @@ with urllib.request.urlopen(URL, timeout=40) as response:
 
 source = zipfile.ZipFile(io.BytesIO(original))
 preset = json.loads(source.read("preset.json").decode("utf-8"))
+print("PRESET_INFO", json.dumps(preset.get("preset_info", {}), ensure_ascii=False))
+for i, element in enumerate(preset.get("preset_root", {}).get("viewgroup_items", [])):
+    print("PRESET_ITEM", i, json.dumps(element, ensure_ascii=False)[:2500])
 counter = {"temp": 0, "feels": 0, "condition": 0, "icon": 0}
 
 def transform(obj):

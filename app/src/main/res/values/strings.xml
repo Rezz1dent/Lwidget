@@ -114,4 +114,14 @@
     <string name="btn_skip">Skip</string>
     <string name="btn_finish">Finish</string>
     <string name="btn_grant">Grant</string>
+    <string name="row_weather_fields">Weather details (tap to choose)</string>
+    <string name="weather_field_temperature">Current temperature</string>
+    <string name="weather_field_condition">Current condition</string>
+    <string name="weather_field_feels_like">Feels like</string>
+    <string name="weather_field_precipitation">Precipitation probability</string>
+    <string name="weather_field_humidity">Humidity</string>
+    <string name="weather_field_wind">Wind speed</string>
+    <string name="weather_field_pressure">Atmospheric pressure</string>
+    <string name="weather_field_high_low">Today's high / low</string>
+    <string name="weather_fields_empty">Choose at least one metric</string>
 </resources>

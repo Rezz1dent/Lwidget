@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "Awidget"
 include(":app")
+include(":bridge")

@@ -122,6 +122,6 @@
     <string name="weather_field_humidity">Humidity</string>
     <string name="weather_field_wind">Wind speed</string>
     <string name="weather_field_pressure">Atmospheric pressure</string>
-    <string name="weather_field_high_low">Today's high / low</string>
+    <string name="weather_field_high_low">Daily high / low</string>
     <string name="weather_fields_empty">Choose at least one metric</string>
 </resources>

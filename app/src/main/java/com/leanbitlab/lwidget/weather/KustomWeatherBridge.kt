@@ -42,7 +42,7 @@ object KustomWeatherBridge {
         val variables = toVariables(data)
         if (variables.isEmpty()) return
         val intent = Intent(ACTION).apply {
-            `package` = "org.kustom.widget"
+            setPackage("org.kustom.widget")
             putExtra(EXTRA_SOURCE, EXT_NAME)
             putExtra(EXTRA_NAMES, variables.keys.toTypedArray())
             putExtra(EXTRA_VALUES, variables.values.toTypedArray())

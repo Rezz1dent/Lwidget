@@ -21,8 +21,6 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: gradle
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
       - name: Run unit tests
         run: bash ./gradlew testDebugUnitTest --no-daemon
       - name: Build debug APK

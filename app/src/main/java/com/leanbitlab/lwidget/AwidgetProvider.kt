@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.RemoteViews
 import com.leanbitlab.lwidget.calendar.CalendarFetcher
+import com.leanbitlab.lwidget.weather.BreezyWeatherFetcher
 import com.leanbitlab.lwidget.render.WidgetRenderer
 import com.leanbitlab.lwidget.stats.SystemStatsFetcher
 import com.leanbitlab.lwidget.tasks.TasksFetcher
@@ -115,6 +116,14 @@ class AwidgetProvider : AppWidgetProvider() {
                             }
                         }
                         "nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER" -> {
+                            // Breezy sends Gadgetbridge-compatible JSON in this extra.
+                            // Persist it before rendering, since WidgetRenderer reads the local cache.
+                            val weatherJson = intent.getStringExtra("WeatherJson")
+                            if (!weatherJson.isNullOrBlank()) {
+                                BreezyWeatherFetcher.saveLatestWeatherData(context, weatherJson)
+                            } else {
+                                Log.w(TAG, "Received weather broadcast without WeatherJson")
+                            }
                             appWidgetIds.forEach { updateAppWidget(context, appWidgetManager, it, UpdateMode.FULL) }
                         }
                     }

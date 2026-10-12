@@ -116,7 +116,7 @@ def font_icon(title, expression, x, y, size):
 current_glyph = font_icon("Row 1 • Flat outline current weather",
                           "$br(breezy, icon_flat)$", 28, 37, 31)
 tomorrow_glyph = font_icon("Row 3 • Flat outline tomorrow weather",
-                           '$if(br(breezy, tomorrow_icon_flat)="grain", "cloud_queue", br(breezy, tomorrow_icon_flat))
+                           '$if(br(breezy, tomorrow_icon_flat)="grain", "cloud_queue", br(breezy, tomorrow_icon_flat))$', 28, 137, 23)
 
 # Match the tomorrow glyph with the pale-blue third-row text instead of
 # displaying it in stark white. Current weather stays brighter above.

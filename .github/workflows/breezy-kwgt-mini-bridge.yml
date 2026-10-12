@@ -1,7 +1,7 @@
 name: Breezy to KWGT mini bridge
 on:
   push:
-    branches: [feature/kwgt-responsive]
+    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather]
     paths:
       - bridge/**
       - settings.gradle.kts
@@ -23,8 +23,21 @@ jobs:
           cache: gradle
       - name: Build lightweight standalone bridge
         run: bash ./gradlew :bridge:assembleDebug --no-daemon
+      - name: Check launcher icon is absent and settings entry is present
+        run: |
+          APK=bridge/build/outputs/apk/debug/bridge-debug.apk
+          AAPT=$(find "$ANDROID_HOME/build-tools" -name aapt -type f | sort -V | tail -n1)
+          "$AAPT" dump badging "$APK" > /tmp/bridge-badging.txt
+          if grep -q 'launchable-activity:' /tmp/bridge-badging.txt; then
+            echo "FAIL: bridge has a launcher icon"
+            exit 1
+          fi
+          "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/bridge-manifest.txt
+          grep -q 'android.intent.action.APPLICATION_PREFERENCES' /tmp/bridge-manifest.txt
+          grep -q 'nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER' /tmp/bridge-manifest.txt
+          echo "Verified: no launcher activity, settings and Breezy receiver present."
       - uses: actions/upload-artifact@v4
         with:
-          name: breezy-kwgt-mini-bridge-debug
+          name: breezy-kwgt-mini-bridge-v2-hidden
           path: bridge/build/outputs/apk/debug/*.apk
           if-no-files-found: error

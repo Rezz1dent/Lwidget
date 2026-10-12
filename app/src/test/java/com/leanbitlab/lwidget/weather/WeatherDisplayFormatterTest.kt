@@ -39,6 +39,15 @@ class WeatherDisplayFormatterTest {
         )
     }
 
+    @Test fun buildsThreeLineWeatherContent() {
+        assertEquals("+21°C", WeatherDisplayFormatter.currentTemperature(weather))
+        assertEquals("Feels like +16°C", WeatherDisplayFormatter.feelsLike(weather))
+        assertEquals("Partly cloudy", WeatherDisplayFormatter.currentDescription(weather))
+        assertEquals("—", WeatherDisplayFormatter.currentTemperature(BreezyGadgetbridgeData()))
+        assertEquals(null, WeatherDisplayFormatter.feelsLike(BreezyGadgetbridgeData()))
+        assertEquals(null, WeatherDisplayFormatter.currentDescription(BreezyGadgetbridgeData()))
+    }
+
     @Test fun ignoresUnavailableWeatherValues() {
         assertEquals("—", WeatherDisplayFormatter.display(BreezyGadgetbridgeData(), listOf("wind"), true))
         assertEquals("Partly cloudy", WeatherDisplayFormatter.display(weather, listOf("condition"), true))

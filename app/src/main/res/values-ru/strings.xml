@@ -121,4 +121,10 @@
     <string name="weather_field_pressure">Атмосферное давление</string>
     <string name="weather_field_high_low">Максимум / минимум сегодня</string>
     <string name="weather_fields_empty">Выбери хотя бы один показатель</string>
+    <string name="weather_layout_label">Расположение погоды</string>
+    <string name="weather_layout_compact">Одна строка (выбор показателей)</string>
+    <string name="weather_layout_stacked">Три строки</string>
+    <string name="weather_size_main">Размер температуры</string>
+    <string name="weather_size_feels">Размер «ощущается как»</string>
+    <string name="weather_size_description">Размер описания погоды</string>
 </resources>

@@ -18,6 +18,7 @@ import com.leanbitlab.lwidget.MainActivity
 import com.leanbitlab.lwidget.R
 import com.leanbitlab.lwidget.UpdateMode
 import com.leanbitlab.lwidget.calendar.CalendarFetcher
+import com.leanbitlab.lwidget.weather.WeatherDisplayFormatter
 import com.leanbitlab.lwidget.stats.SystemStatsFetcher
 import com.leanbitlab.lwidget.tasks.TasksFetcher
 import java.util.concurrent.ConcurrentHashMap
@@ -324,52 +325,18 @@ object WidgetRenderer {
 
         SystemStatsFetcher.updateBatteryAndTemp(context, views, prefs, showBattery, showTemp)
 
-        // Weather Condition
+        // Show the weather metrics chosen by the user, not an automatic
+        // multi-day precipitation warning. Breezy provides temperatures in Kelvin.
         val showWeather = showWeatherCondition && bweather != null
         views.setViewVisibility(R.id.layout_weather_condition, if (showWeather) View.VISIBLE else View.GONE)
         if (showWeather && bweather != null) {
-            var weatherCode = bweather.currentConditionCode
-            var weatherText = bweather.currentCondition
-            var hasWarning = false
+            val selection = WeatherDisplayFormatter.selectedFields(
+                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null)
+            )
+            val language = context.resources.configuration.locales[0].language
+            val conditionText = WeatherDisplayFormatter.display(bweather, selection, language == "ru")
 
-            val forecasts = bweather.forecasts
-            if (forecasts != null && forecasts.isNotEmpty()) {
-                for ((index, forecast) in forecasts.take(7).withIndex()) {
-                    val fCode = forecast.conditionCode
-                    if (fCode != null && (
-                                fCode in listOf(500, 501, 502, 503, 504, 511, 520, 521, 522, 531) ||
-                                        fCode in listOf(600, 601, 602, 611, 612, 615, 616, 620, 621, 622) ||
-                                        fCode in listOf(210, 211, 212, 221, 230, 231, 232)
-                                )) {
-                        hasWarning = true
-                        weatherCode = fCode
-                        val dayText = when (index) {
-                            0 -> "today"
-                            1 -> "tomorrow"
-                            else -> {
-                                val localDate = java.time.LocalDate.now().plusDays(index.toLong())
-                                localDate.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault())
-                            }
-                        }
-                        val precipString = if (forecast.precipProbability != null && forecast.precipProbability > 0) "${forecast.precipProbability}% " else ""
-                        val conditionWarning = when (fCode) {
-                            in listOf(500, 501, 502, 503, 504, 511, 520, 521, 522, 531) -> if (index <= 1) "Rain $dayText" else "Rain on $dayText"
-                            in listOf(600, 601, 602, 611, 612, 615, 616, 620, 621, 622) -> if (index <= 1) "Snow $dayText" else "Snow on $dayText"
-                            in listOf(210, 211, 212, 221, 230, 231, 232) -> if (index <= 1) "Storm $dayText" else "Storm on $dayText"
-                            else -> "Warning"
-                        }
-                        weatherText = "$precipString$conditionWarning"
-                        break
-                    }
-                }
-            }
-
-            var conditionText = weatherText
-            if (conditionText.isNullOrEmpty()) {
-                conditionText = "Unknown"
-            }
-
-            val weatherDrawableRes = when (weatherCode) {
+            val weatherDrawableRes = when (bweather.currentConditionCode) {
                 800 -> R.drawable.ic_weather_sunny
                 801, 802 -> R.drawable.ic_weather_partly_cloudy
                 803, 804 -> R.drawable.ic_weather_cloudy
@@ -382,24 +349,25 @@ object WidgetRenderer {
                 else -> R.drawable.ic_weather_cloudy
             }
 
+
             views.setImageViewResource(R.id.icon_weather, weatherDrawableRes)
             views.setInt(R.id.icon_weather, "setColorFilter", secondaryColor)
             views.setViewVisibility(R.id.icon_weather, View.VISIBLE)
 
-            if (showWeatherIconOnly && !hasWarning) {
-                views.setViewVisibility(R.id.text_weather_condition, View.GONE)
-            } else {
-                views.setViewVisibility(R.id.text_weather_condition, View.VISIBLE)
+            // Icon-only is only respected if no text metrics were explicitly selected.
+            val iconOnly = showWeatherIconOnly &&
+                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null) == null
+            views.setViewVisibility(
+                R.id.text_weather_condition, if (iconOnly) View.GONE else View.VISIBLE
+            )
+            if (!iconOnly) {
                 val weatherSpan = android.text.SpannableString(conditionText)
-                if (hasWarning) {
-                    val lastSpaceIdx = conditionText.lastIndexOf(' ')
-                    val onSpaceIdx = conditionText.lastIndexOf(" on ")
-                    val shrinkStartIndex = if (onSpaceIdx != -1) onSpaceIdx else lastSpaceIdx
-                    if (shrinkStartIndex != -1 && shrinkStartIndex < weatherSpan.length) {
-                        weatherSpan.setSpan(android.text.style.RelativeSizeSpan(0.75f), shrinkStartIndex, weatherSpan.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
-                    }
+                if (boldWeather) {
+                    weatherSpan.setSpan(
+                        android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                        0, weatherSpan.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
                 }
-                if (boldWeather) weatherSpan.setSpan(android.text.style.StyleSpan(android.graphics.Typeface.BOLD), 0, weatherSpan.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
                 views.setTextViewText(R.id.text_weather_condition, weatherSpan)
                 views.setTextViewTextSize(R.id.text_weather_condition, android.util.TypedValue.COMPLEX_UNIT_SP, sizeWeather)
                 views.setTextColor(R.id.text_weather_condition, secondaryColor)

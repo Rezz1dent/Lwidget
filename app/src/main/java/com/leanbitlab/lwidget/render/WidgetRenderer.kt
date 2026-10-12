@@ -91,6 +91,10 @@ object WidgetRenderer {
         val showWeatherCondition = prefs.getBoolean("show_weather_condition", false)
         val sizeWeather = prefs.getFloat("size_weather", 18f)
         val boldWeather = prefs.getBoolean("bold_weather", false)
+        val weatherLayout = prefs.getInt("weather_layout_idx", 1)
+        val sizeWeatherMain = prefs.getFloat("size_weather_main", 22f).coerceIn(10f, 48f)
+        val sizeWeatherFeels = prefs.getFloat("size_weather_feels", 14f).coerceIn(9f, 32f)
+        val sizeWeatherDescription = prefs.getFloat("size_weather_description", 14f).coerceIn(9f, 32f)
 
         var showEvents = prefs.getBoolean("show_events", false)
         if (showEvents && androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_CALENDAR) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -325,16 +329,62 @@ object WidgetRenderer {
 
         SystemStatsFetcher.updateBatteryAndTemp(context, views, prefs, showBattery, showTemp)
 
-        // Show the weather metrics chosen by the user, not an automatic
-        // multi-day precipitation warning. Breezy provides temperatures in Kelvin.
+        // Weather content occupies its own constrained right column.
+        // Mode 0 keeps the customizable compact line; mode 1 uses three rows.
         val showWeather = showWeatherCondition && bweather != null
         views.setViewVisibility(R.id.layout_weather_condition, if (showWeather) View.VISIBLE else View.GONE)
         if (showWeather && bweather != null) {
-            val selection = WeatherDisplayFormatter.selectedFields(
-                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null)
+            val stacked = weatherLayout != 0
+            val topText = if (stacked) {
+                WeatherDisplayFormatter.currentTemperature(bweather)
+            } else {
+                val selection = WeatherDisplayFormatter.selectedFields(
+                    prefs.getString(WeatherDisplayFormatter.PREF_KEY, null)
+                )
+                val russian = context.resources.configuration.locales[0].language == "ru"
+                WeatherDisplayFormatter.display(bweather, selection, russian)
+            }
+            val feelsText = if (stacked) WeatherDisplayFormatter.feelsLike(bweather) else null
+            val description = if (stacked) WeatherDisplayFormatter.currentDescription(bweather) else null
+            val iconOnly = !stacked && showWeatherIconOnly &&
+                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null) == null
+
+            views.setTextViewText(R.id.text_weather_temperature, topText)
+            views.setTextViewTextSize(
+                R.id.text_weather_temperature, android.util.TypedValue.COMPLEX_UNIT_SP,
+                if (stacked) sizeWeatherMain else sizeWeather
             )
-            val language = context.resources.configuration.locales[0].language
-            val conditionText = WeatherDisplayFormatter.display(bweather, selection, language == "ru")
+            views.setTextColor(R.id.text_weather_temperature, secondaryColor)
+            views.setViewVisibility(
+                R.id.text_weather_temperature, if (iconOnly) View.GONE else View.VISIBLE
+            )
+
+            views.setTextViewText(R.id.text_weather_feels, feelsText ?: "")
+            views.setTextViewTextSize(
+                R.id.text_weather_feels, android.util.TypedValue.COMPLEX_UNIT_SP, sizeWeatherFeels
+            )
+            views.setTextColor(R.id.text_weather_feels, secondaryColor)
+            views.setViewVisibility(
+                R.id.text_weather_feels, if (!feelsText.isNullOrBlank()) View.VISIBLE else View.GONE
+            )
+
+            views.setTextViewText(R.id.text_weather_condition, description ?: "")
+            views.setTextViewTextSize(
+                R.id.text_weather_condition, android.util.TypedValue.COMPLEX_UNIT_SP, sizeWeatherDescription
+            )
+            views.setTextColor(R.id.text_weather_condition, secondaryColor)
+            views.setViewVisibility(
+                R.id.text_weather_condition, if (!description.isNullOrBlank()) View.VISIBLE else View.GONE
+            )
+            // Preserve the existing bold-text preference on the top row.
+            if (boldWeather && !iconOnly) {
+                val styled = android.text.SpannableString(topText)
+                styled.setSpan(
+                    android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                    0, styled.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                )
+                views.setTextViewText(R.id.text_weather_temperature, styled)
+            }
 
             val weatherDrawableRes = when (bweather.currentConditionCode) {
                 800 -> R.drawable.ic_weather_sunny
@@ -354,29 +404,12 @@ object WidgetRenderer {
             views.setInt(R.id.icon_weather, "setColorFilter", secondaryColor)
             views.setViewVisibility(R.id.icon_weather, View.VISIBLE)
 
-            // Icon-only is only respected if no text metrics were explicitly selected.
-            val iconOnly = showWeatherIconOnly &&
-                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null) == null
-            views.setViewVisibility(
-                R.id.text_weather_condition, if (iconOnly) View.GONE else View.VISIBLE
-            )
-            if (!iconOnly) {
-                val weatherSpan = android.text.SpannableString(conditionText)
-                if (boldWeather) {
-                    weatherSpan.setSpan(
-                        android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
-                        0, weatherSpan.length, android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                    )
-                }
-                views.setTextViewText(R.id.text_weather_condition, weatherSpan)
-                views.setTextViewTextSize(R.id.text_weather_condition, android.util.TypedValue.COMPLEX_UNIT_SP, sizeWeather)
-                views.setTextColor(R.id.text_weather_condition, secondaryColor)
-            }
-
             val launchIntent = context.packageManager.getLaunchIntentForPackage("org.breezyweather")
             if (launchIntent != null) {
                 val pendingIntent = PendingIntent.getActivity(context, 0, launchIntent, PendingIntent.FLAG_IMMUTABLE)
                 views.setOnClickPendingIntent(R.id.layout_weather_condition, pendingIntent)
+                views.setOnClickPendingIntent(R.id.text_weather_temperature, pendingIntent)
+                views.setOnClickPendingIntent(R.id.text_weather_feels, pendingIntent)
                 views.setOnClickPendingIntent(R.id.text_weather_condition, pendingIntent)
             }
         }
@@ -465,7 +498,7 @@ object WidgetRenderer {
         val allRightItems = listOf(
             StackEntry(R.id.text_battery, showBattery, sizeBattery, "show_battery"),
             StackEntry(R.id.text_temp, showTemp, sizeTemp, "show_temp"),
-            StackEntry(R.id.layout_weather_condition, showWeather, sizeWeather, "show_weather_condition"),
+            StackEntry(R.id.layout_weather_condition, showWeather, if (weatherLayout == 0) sizeWeather else sizeWeatherMain, "show_weather_condition"),
             StackEntry(R.id.text_data_usage, showData, sizeData, "show_data_usage"),
             StackEntry(R.id.text_storage, showStorage, sizeStorage, "show_storage"),
             StackEntry(R.id.text_ram, showRam, sizeRam, "show_ram"),
@@ -488,7 +521,13 @@ object WidgetRenderer {
         var isFirstVisible = true
         for (entry in rightStack) {
             if (entry.isVisible) {
-                val itemHeight = when {
+                val isStackedWeather = entry.key == "show_weather_condition" && weatherLayout != 0
+                val itemHeight = if (isStackedWeather) {
+                    // Conservative line heights prevent the next right-side item from crossing weather.
+                    maxOf(24f, sizeWeatherMain * 1.45f) +
+                        (if (bweather?.feelsLikeTemp != null) sizeWeatherFeels * 1.45f else 0f) +
+                        (if (!bweather?.currentCondition.isNullOrBlank()) sizeWeatherDescription * 1.45f else 0f)
+                } else when {
                     entry.size >= 40f -> entry.size * 1.15f
                     entry.size >= 18f -> entry.size * 1.25f
                     else -> entry.size * 1.32f

@@ -48,6 +48,7 @@ import com.google.android.material.floatingactionbutton.ExtendedFloatingActionBu
 import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.google.android.material.tabs.TabLayout
+import com.leanbitlab.lwidget.weather.WeatherDisplayFormatter
 import android.view.MotionEvent
 import androidx.core.widget.NestedScrollView
 
@@ -1256,6 +1257,7 @@ class MainActivity : AppCompatActivity() {
             isContent = true
         ).also { it.tag = "weather_condition" }
         bindToggle(R.id.row_weather_bold, getString(R.string.row_bold_text), "bold_weather", false)
+        setupWeatherFieldsSelector()
 
         // Override weather listener for Breezy Weather check
         weatherSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -1303,6 +1305,61 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    private fun setupWeatherFieldsSelector() {
+        val row = findViewById<View>(R.id.row_weather_fields)
+        val summary = row.findViewById<TextView>(R.id.weather_fields_summary)
+        val keys = WeatherDisplayFormatter.OPTIONS
+        val labels = arrayOf(
+            getString(R.string.weather_field_temperature),
+            getString(R.string.weather_field_condition),
+            getString(R.string.weather_field_feels_like),
+            getString(R.string.weather_field_precipitation),
+            getString(R.string.weather_field_humidity),
+            getString(R.string.weather_field_wind),
+            getString(R.string.weather_field_pressure),
+            getString(R.string.weather_field_high_low)
+        )
+
+        fun refreshSummary() {
+            val active = WeatherDisplayFormatter.selectedFields(
+                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null)
+            )
+            summary.text = keys.indices.filter { keys[it] in active }
+                .joinToString(" · ") { labels[it] }
+        }
+        refreshSummary()
+
+        row.setOnClickListener {
+            val checkedFields = WeatherDisplayFormatter.selectedFields(
+                prefs.getString(WeatherDisplayFormatter.PREF_KEY, null)
+            ).toMutableSet()
+            val selected = BooleanArray(keys.size) { keys[it] in checkedFields }
+
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle(R.string.row_weather_fields)
+                .setMultiChoiceItems(labels, selected) { _, which, isChecked ->
+                    if (isChecked) checkedFields.add(keys[which])
+                    else checkedFields.remove(keys[which])
+                }
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    if (checkedFields.isEmpty()) {
+                        android.widget.Toast.makeText(
+                            this, R.string.weather_fields_empty, android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        prefs.edit().putString(
+                            WeatherDisplayFormatter.PREF_KEY,
+                            keys.filter { it in checkedFields }.joinToString(",")
+                        ).apply()
+                        refreshSummary()
+                        updateWidget()
+                    }
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+    }
+
     private fun setupDataUsageSection() {
         // Data Usage
         val dataSwitch = bindFoldedSection(

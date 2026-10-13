@@ -53,6 +53,7 @@ public final class MainActivity extends Activity {
         new Entry("Сейчас", "code", "Числовой погодный код (OpenWeather-подобный)"),
         new Entry("Сейчас", "icon", "Погодный символ Emoji"),
         new Entry("Сейчас", "icon_flat", "Название векторной иконки в шрифте Meteo"),
+        new Entry("Сейчас", "icon_uri", "Адрес текущей картинки из отдельно установленного Flat Icon Provider"),
         new Entry("Сейчас", "humidity", "Относительная влажность, %"),
         new Entry("Сейчас", "precip", "Вероятность осадков сейчас, %"),
         new Entry("Сейчас", "details", "Общая строка: Like, стрелка ветра, м/с и влажность"),
@@ -75,6 +76,7 @@ public final class MainActivity extends Activity {
         new Entry("Завтра", "tomorrow_precip", "Вероятность осадков завтра, %"),
         new Entry("Завтра", "tomorrow_icon", "Завтрашняя погода — символ Emoji"),
         new Entry("Завтра", "tomorrow_icon_flat", "Иконка погоды завтра: название в наборе Meteo"),
+        new Entry("Завтра", "tomorrow_icon_uri", "Адрес картинки завтра из Flat Icon Provider (не входит в APK)"),
         new Entry("Другое", "location", "Название населённого пункта из Breezy")
     };
 
@@ -154,7 +156,9 @@ public final class MainActivity extends Activity {
             "Если система не показывает запрос доступа, разреши его в настройках " +
             "приложения. Автообновление происходит после уведомлений Breezy.\n" +
             "Пока установлен старый мост, выключи в Breezy отправку в Lwidget, " +
-            "чтобы старые данные не перезаписывали новые.", 13, MUTED);
+            "чтобы старые данные не перезаписывали новые.\n" +
+            "Иконки Flat (необязательно): установи Flat Icon Provider отдельно. " +
+            "Адреса icon_uri и tomorrow_icon_uri доступны для Bitmap в KWGT.", 13, MUTED);
         note.setPadding(0, dp(10), 0, dp(12));
         main.addView(note);
 

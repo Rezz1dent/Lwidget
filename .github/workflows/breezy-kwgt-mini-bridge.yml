@@ -1,7 +1,7 @@
 name: Breezy to KWGT mini bridge
 on:
   push:
-    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather, feature/kwgt-three-row-v7]
+    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather, feature/kwgt-three-row-v7, feature/kwgt-meteo-v10]
     paths:
       - bridge/**
       - settings.gradle.kts
@@ -38,6 +38,6 @@ jobs:
           echo "Verified: no launcher activity, settings and Breezy receiver present."
       - uses: actions/upload-artifact@v4
         with:
-          name: breezy-kwgt-mini-bridge-v3-weather
+          name: breezy-kwgt-bridge-v4-catalog
           path: bridge/build/outputs/apk/debug/*.apk
           if-no-files-found: error

@@ -49,11 +49,11 @@ public final class ProviderBridge {
             if (context.getPackageManager().resolveContentProvider(authority(pkg), 0) != null) {
                 String permission = pkg + ".READ_PROVIDER";
                 return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
-                    ? "Разрешение Breezy получено (" + pkg + ")"
-                    : "Нужен доступ к данным Breezy (кнопка ниже)";
+                    ? context.getString(R.string.status_granted, pkg)
+                    : context.getString(R.string.status_required);
             }
         }
-        return "ContentProvider не найден — требуется Breezy 6.1.0+";
+        return context.getString(R.string.status_not_found);
     }
 
     private static String approvedPackage(Context context) {

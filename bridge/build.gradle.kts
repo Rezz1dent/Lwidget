@@ -11,8 +11,8 @@ android {
         applicationId = "com.rezz1dent.breezykwgtbridge"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2-provider-preview"
+        versionCode = 3
+        versionName = "1.0"
     }
 
     buildTypes {

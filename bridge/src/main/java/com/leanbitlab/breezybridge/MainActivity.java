@@ -23,8 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Documentation browser for EVERY variable emitted by WeatherReceiver.
- * Tap any entry to copy a ready-made $br(breezy, variable)$ formula.
+ * Hidden settings screen and searchable reference for all 30 KWGT variables.
+ * Tap any variable to copy $br(breezy, variable)$.
  */
 public final class MainActivity extends Activity {
     private static final int MAIN = Color.rgb(35, 47, 65);
@@ -32,46 +32,47 @@ public final class MainActivity extends Activity {
     private static final int ACCENT = Color.rgb(39, 105, 166);
 
     private static final class Entry {
-        final String group, name, description;
-        Entry(String group, String name, String description) {
-            this.group = group;
+        final int groupRes, descriptionRes;
+        final String name;
+        Entry(int groupRes, String name, int descriptionRes) {
+            this.groupRes = groupRes;
             this.name = name;
-            this.description = description;
+            this.descriptionRes = descriptionRes;
         }
     }
 
-    // Keep names in sync with WeatherReceiver.KEYS (also verified in CI).
+    // Keep variable names in sync with WeatherReceiver.KEYS.
     private static final Entry[] CATALOG = {
-        new Entry("Сейчас", "temp", "Текущая температура, ° (например, 8°)"),
-        new Entry("Сейчас", "feels", "Ощущается как, с надписью Feels like"),
-        new Entry("Сейчас", "like", "Ощущается как, только температура в градусах"),
-        new Entry("Сейчас", "condition", "Текст текущей погоды из Breezy"),
-        new Entry("Сейчас", "code", "Числовой погодный код (OpenWeather-подобный)"),
-        new Entry("Сейчас", "icon", "Погодный символ Emoji"),
-        new Entry("Сейчас", "icon_flat", "Название векторной иконки в шрифте Meteo"),
-        new Entry("Сейчас", "humidity", "Относительная влажность, %"),
-        new Entry("Сейчас", "precip", "Вероятность осадков сейчас, %"),
-        new Entry("Сейчас", "details", "Общая строка: Like, стрелка ветра, м/с и влажность"),
-        new Entry("Ветер", "wind", "Скорость ветра в km/h (английская подпись)"),
-        new Entry("Ветер", "wind_kmh", "Скорость ветра в км/ч"),
-        new Entry("Ветер", "wind_ms", "Скорость ветра в м/с"),
-        new Entry("Ветер", "wind_direction", "Откуда дует ветер: С, СВ, В, ЮВ, Ю, ЮЗ, З, СЗ"),
-        new Entry("Ветер", "wind_degrees", "Откуда дует ветер, азимут 0–359°"),
-        new Entry("Ветер", "wind_arrow", "Стрелка направления, КУДА дует воздух"),
-        new Entry("Ветер", "wind_text", "Сторона света (откуда) + скорость в м/с"),
-        new Entry("Сегодня", "today_max", "Максимальная температура за сегодня, °"),
-        new Entry("Сегодня", "today_min", "Минимальная температура за сегодня, °"),
-        new Entry("Сегодня", "today_range", "Сегодня: максимум/минимум, например 10/7°"),
-        new Entry("Сегодня", "today_compact", "Готовая строка Today: 10/7°"),
-        new Entry("Завтра", "tomorrow_max", "Завтрашняя максимальная температура, °"),
-        new Entry("Завтра", "tomorrow_min", "Завтрашняя минимальная температура, °"),
-        new Entry("Завтра", "tomorrow_range", "Завтра: максимум ↑ и минимум ↓, °"),
-        new Entry("Завтра", "tomorrow", "Готовая строка «Завтра ↑… ↓…»"),
-        new Entry("Завтра", "tomorrow_compact", "Готовая строка Tomorrow: 8/4°"),
-        new Entry("Завтра", "tomorrow_precip", "Вероятность осадков завтра, %"),
-        new Entry("Завтра", "tomorrow_icon", "Завтрашняя погода — символ Emoji"),
-        new Entry("Завтра", "tomorrow_icon_flat", "Иконка погоды завтра: название в наборе Meteo"),
-        new Entry("Другое", "location", "Название населённого пункта из Breezy")
+        new Entry(R.string.group_now, "temp", R.string.var_temp),
+        new Entry(R.string.group_now, "feels", R.string.var_feels),
+        new Entry(R.string.group_now, "like", R.string.var_like),
+        new Entry(R.string.group_now, "condition", R.string.var_condition),
+        new Entry(R.string.group_now, "code", R.string.var_code),
+        new Entry(R.string.group_now, "icon", R.string.var_icon),
+        new Entry(R.string.group_now, "icon_flat", R.string.var_icon_flat),
+        new Entry(R.string.group_now, "humidity", R.string.var_humidity),
+        new Entry(R.string.group_now, "precip", R.string.var_precip),
+        new Entry(R.string.group_now, "details", R.string.var_details),
+        new Entry(R.string.group_wind, "wind", R.string.var_wind),
+        new Entry(R.string.group_wind, "wind_kmh", R.string.var_wind_kmh),
+        new Entry(R.string.group_wind, "wind_ms", R.string.var_wind_ms),
+        new Entry(R.string.group_wind, "wind_direction", R.string.var_wind_direction),
+        new Entry(R.string.group_wind, "wind_degrees", R.string.var_wind_degrees),
+        new Entry(R.string.group_wind, "wind_arrow", R.string.var_wind_arrow),
+        new Entry(R.string.group_wind, "wind_text", R.string.var_wind_text),
+        new Entry(R.string.group_today, "today_max", R.string.var_today_max),
+        new Entry(R.string.group_today, "today_min", R.string.var_today_min),
+        new Entry(R.string.group_today, "today_range", R.string.var_today_range),
+        new Entry(R.string.group_today, "today_compact", R.string.var_today_compact),
+        new Entry(R.string.group_tomorrow, "tomorrow_max", R.string.var_tomorrow_max),
+        new Entry(R.string.group_tomorrow, "tomorrow_min", R.string.var_tomorrow_min),
+        new Entry(R.string.group_tomorrow, "tomorrow_range", R.string.var_tomorrow_range),
+        new Entry(R.string.group_tomorrow, "tomorrow", R.string.var_tomorrow),
+        new Entry(R.string.group_tomorrow, "tomorrow_compact", R.string.var_tomorrow_compact),
+        new Entry(R.string.group_tomorrow, "tomorrow_precip", R.string.var_tomorrow_precip),
+        new Entry(R.string.group_tomorrow, "tomorrow_icon", R.string.var_tomorrow_icon),
+        new Entry(R.string.group_tomorrow, "tomorrow_icon_flat", R.string.var_tomorrow_icon_flat),
+        new Entry(R.string.group_other, "location", R.string.var_location)
     };
 
     private LinearLayout entriesContainer;
@@ -101,13 +102,10 @@ public final class MainActivity extends Activity {
         main.setPadding(dp(18), dp(20), dp(18), dp(32));
         scroll.addView(main);
 
-        TextView title = text("Breezy → KWGT Bridge", 23, MAIN);
+        TextView title = text(getString(R.string.app_name), 23, MAIN);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         main.addView(title);
-        TextView caption = text(
-            "Передача погоды без интернета и геолокации.\n" +
-            "Разреши доступ к данным Breezy, затем обнови прогноз.",
-            14, MUTED);
+        TextView caption = text(getString(R.string.intro_caption), 14, MUTED);
         caption.setPadding(0, dp(6), 0, dp(12));
         main.addView(caption);
 
@@ -115,7 +113,7 @@ public final class MainActivity extends Activity {
         main.addView(status);
 
         Button grant = new Button(this);
-        grant.setText("Разрешить доступ к Breezy");
+        grant.setText(R.string.grant_button);
         grant.setOnClickListener(v -> {
             String needed = ProviderBridge.permissionToRequest(this);
             if (needed == null) {
@@ -127,7 +125,7 @@ public final class MainActivity extends Activity {
         main.addView(grant);
 
         Button resend = new Button(this);
-        resend.setText("Получить данные Breezy и передать в KWGT");
+        resend.setText(R.string.resend_button);
         resend.setOnClickListener(v -> {
             resend.setEnabled(false);
             new Thread(() -> {
@@ -137,26 +135,23 @@ public final class MainActivity extends Activity {
                     loadLatest();
                     drawList();
                     Toast.makeText(this,
-                        ok ? "Погода отправлена в KWGT" :
-                            "Не удалось получить данные — проверь разрешение и версию Breezy",
+                        ok ? R.string.send_success : R.string.send_failure,
                         Toast.LENGTH_LONG).show();
                 });
             }, "breezy-kwgt-manual").start();
         });
         main.addView(resend);
 
-        TextView hint = text(
-            "Справочник переменных\nНажми на любую строку, чтобы скопировать " +
-            "формулу для вставки в KWGT. Справа показано последнее значение.",
-            14, MAIN);
+        TextView hint = text(getString(R.string.catalog_hint), 14, MAIN);
         hint.setPadding(0, dp(16), 0, dp(10));
         main.addView(hint);
 
         search = new EditText(this);
         search.setSingleLine(true);
         search.setTextSize(15);
-        search.setHint("Поиск переменной или показателя");
+        search.setHint(R.string.search_hint);
         main.addView(search);
+
         entriesContainer = new LinearLayout(this);
         entriesContainer.setOrientation(LinearLayout.VERTICAL);
         main.addView(entriesContainer);
@@ -206,8 +201,8 @@ public final class MainActivity extends Activity {
         }
         if (status != null) {
             String cache = latestValues.isEmpty()
-                ? "Пока нет данных от Breezy"
-                : "Данные получены • переменных: " + latestValues.size();
+                ? getString(R.string.cache_empty)
+                : getString(R.string.cache_received, latestValues.size());
             status.setText(ProviderBridge.status(this) + "\n" + cache);
         }
     }
@@ -217,39 +212,45 @@ public final class MainActivity extends Activity {
         String filter = search.getText().toString().trim().toLowerCase(Locale.ROOT);
         String lastGroup = "";
         for (Entry e : CATALOG) {
+            String group = getString(e.groupRes);
+            String description = getString(e.descriptionRes);
             if (!filter.isEmpty() &&
-                !(e.name + " " + e.description + " " + e.group)
+                !(e.name + " " + description + " " + group)
                     .toLowerCase(Locale.ROOT).contains(filter)) continue;
-            if (!e.group.equals(lastGroup)) {
-                TextView heading = text(e.group, 17, ACCENT);
+            if (!group.equals(lastGroup)) {
+                TextView heading = text(group, 17, ACCENT);
                 heading.setTypeface(null, android.graphics.Typeface.BOLD);
                 heading.setPadding(0, dp(18), 0, dp(8));
                 entriesContainer.addView(heading);
-                lastGroup = e.group;
+                lastGroup = group;
             }
+
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.VERTICAL);
             row.setPadding(dp(10), dp(10), dp(10), dp(12));
-
             String formula = "$br(breezy, " + e.name + ")$";
+
             TextView name = text(e.name + "    ↗", 17, MAIN);
             name.setTypeface(android.graphics.Typeface.MONOSPACE, android.graphics.Typeface.BOLD);
             row.addView(name);
-            TextView desc = text(e.description, 14, MUTED);
+            TextView desc = text(description, 14, MUTED);
             desc.setPadding(0, dp(2), 0, dp(3));
             row.addView(desc);
 
             String value = latestValues.get(e.name);
             TextView sample = text(
-                value == null || value.isEmpty() ? "Последнее значение: —" :
-                    "Сейчас: " + value, 13, ACCENT);
+                value == null || value.isEmpty()
+                    ? getString(R.string.sample_empty)
+                    : getString(R.string.sample_current, value),
+                13, ACCENT);
             row.addView(sample);
             row.setOnClickListener(v -> {
                 ClipboardManager manager =
                     (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 if (manager != null) {
                     manager.setPrimaryClip(ClipData.newPlainText("KWGT " + e.name, formula));
-                    Toast.makeText(this, "Скопировано: " + formula, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,
+                        getString(R.string.copy_success, formula), Toast.LENGTH_SHORT).show();
                 }
             });
             entriesContainer.addView(row);

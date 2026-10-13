@@ -200,5 +200,63 @@ with zipfile.ZipFile(out) as result:
     assert "org.breezyweather" in expressions
     assert "SHOW_ALARMS" in expressions and "APP_CALENDAR" in expressions
     assert "BREEZY / LIVE" not in expressions
+
+# Optional experiment: actual Breezy Flat Icon Provider artwork.
+# The graphic assets are *not included*. Android's separate provider app must
+# be installed by the user; the standalone bridge serves its drawable resources
+# to KWGT as content:// PNGs. This .kwgt contains URLs only.
+flat = copy.deepcopy(preset)
+flat_root = flat["preset_root"]
+flat_items = flat_root["viewgroup_items"]
+assert len(flat_items) == 17
+
+def flat_bitmap(title, variable, x, y, width):
+    return {
+        "internal_type": "BitmapModule",
+        "internal_title": title,
+        "bitmap_bitmap": "",
+        "bitmap_width": float(width),
+        "position_anchor": "TOPRIGHT",
+        "position_offset_x": float(x),
+        "position_offset_y": float(y),
+        "internal_toggles": {"bitmap_bitmap": 10},
+        "internal_formulas": {"bitmap_bitmap": f"$br(breezy, {variable})$"},
+        "internal_events": [
+            {"type": "SINGLE_TAP", "action": "LAUNCH_APP", "intent": BREEZY}
+        ],
+    }
+
+flat_items[15] = flat_bitmap("Current • official Breezy Flat artwork",
+                             "icon_uri", 25, 34, 40)
+flat_items[16] = flat_bitmap("Tomorrow • official Breezy Flat artwork",
+                             "tomorrow_icon_uri", 25, 137, 27)
+flat["preset_info"].update(
+    title="Breezy Flat • KWGT v11 (experimental)",
+    description=("Requires independently installed Breezy Flat Icon Provider and "
+                 "independent Breezy KWGT provider bridge v11. "
+                 "Artworks are NOT bundled or redistributed.")
+)
+flat_file = "dist/Breezy_Flat_Icons_Experimental_v11.kwgt"
+with zipfile.ZipFile(flat_file, "w", zipfile.ZIP_DEFLATED) as output:
+    for name in archive.namelist():
+        if name == "preset.json":
+            output.writestr(
+                name, json.dumps(flat, ensure_ascii=False, separators=(",", ":"))
+            )
+        else:
+            output.writestr(name, archive.read(name))
+with zipfile.ZipFile(flat_file) as result:
+    assert result.testzip() is None
+    tested = json.loads(result.read("preset.json"))
+    all_items = tested["preset_root"]["viewgroup_items"]
+    assert len(all_items) == 17
+    assert [all_items[15]["internal_type"], all_items[16]["internal_type"]] == [
+        "BitmapModule", "BitmapModule"
+    ]
+    assert all_items[15]["internal_formulas"]["bitmap_bitmap"] == "$br(breezy, icon_uri)$"
+    assert all_items[16]["internal_formulas"]["bitmap_bitmap"] == "$br(breezy, tomorrow_icon_uri)$"
+    assert all("bitmaps/" not in name for name in result.namelist())
+print("V11_OPTIONAL_FLAT_URI_PRESET_VERIFIED", flat_file, os.stat(flat_file).st_size)
+
 print("V10_PRESET_VALIDATED", [(x["internal_type"], x.get("internal_title")) for x in m])
 print("FILE", out, os.stat(out).st_size, "bytes")

@@ -1,7 +1,7 @@
 name: Breezy to KWGT mini bridge
 on:
   push:
-    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather, feature/kwgt-three-row-v7, feature/kwgt-meteo-v10]
+    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather, feature/kwgt-three-row-v7, feature/kwgt-meteo-v10, feature/standalone-provider-bridge-v11]
     paths:
       - bridge/**
       - settings.gradle.kts
@@ -34,10 +34,16 @@ jobs:
           fi
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml > /tmp/bridge-manifest.txt
           grep -q 'android.intent.action.APPLICATION_PREFERENCES' /tmp/bridge-manifest.txt
-          grep -q 'nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER' /tmp/bridge-manifest.txt
+          grep -q 'org.breezyweather.ACTION_UPDATE_NOTIFIER' /tmp/bridge-manifest.txt
+          grep -q 'org.breezyweather.READ_PROVIDER' /tmp/bridge-manifest.txt
+          if grep -q 'nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER' /tmp/bridge-manifest.txt; then
+            echo "FAIL: preview bridge still listens for Gadgetbridge data"
+            exit 1
+          fi
+          grep -q 'com.rezz1dent.breezykwgtbridge' /tmp/bridge-badging.txt
           echo "Verified: no launcher activity, settings and Breezy receiver present."
       - uses: actions/upload-artifact@v4
         with:
-          name: breezy-kwgt-bridge-v4-catalog
+          name: breezy-kwgt-provider-v11-preview
           path: bridge/build/outputs/apk/debug/*.apk
           if-no-files-found: error

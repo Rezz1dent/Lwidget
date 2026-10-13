@@ -5,6 +5,7 @@
     <queries>
         <package android:name="org.breezyweather" />
         <package android:name="org.breezyweather.debug" />
+        <package android:name="org.breezyweather.flaticonprovider" />
     </queries>
     <application
         android:label="Breezy KWGT Bridge • Provider"
@@ -19,6 +20,11 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
+        <provider
+            android:name="com.leanbitlab.breezybridge.FlatIconContentProvider"
+            android:authorities="com.rezz1dent.breezykwgtbridge.icons"
+            android:exported="true"
+            android:grantUriPermissions="true"/>
         <receiver
             android:name="com.leanbitlab.breezybridge.ContentUpdateReceiver"
             android:exported="true">

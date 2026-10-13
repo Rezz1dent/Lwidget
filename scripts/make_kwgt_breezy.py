@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""KWGT v9: balanced three-line typography and colors with three weather rows and two outline icons.
+"""KWGT v10: balanced Meteo weather glyphs and Celsius-free formatting with three weather rows and two outline icons.
 
 Keeps the known-good top-level Kustom module structure (no nested OverlapGroups).
-Data is supplied exclusively by the Breezy -> KWGT mini bridge v3.
+Data is supplied exclusively by the Breezy -> KWGT mini bridge v4.
 """
 import copy
 import io
@@ -100,8 +100,8 @@ def font_icon(title, expression, x, y, size):
     module = {
         "internal_type": "FontIconModule",
         "internal_title": title,
-        "icon_set": "kfile://org.kustom.widget.provider/icons/material.ttf",
-        "icon_icon": "cloud_queue",
+        "icon_set": "kfile://org.kustom.widget.provider/icons/meteo.ttf",
+        "icon_icon": "Cloud5",
         "icon_size": float(size),
         "position_anchor": "TOPRIGHT",
         "position_offset_x": float(x),
@@ -116,7 +116,7 @@ def font_icon(title, expression, x, y, size):
 current_glyph = font_icon("Row 1 • Flat outline current weather",
                           "$br(breezy, icon_flat)$", 28, 37, 31)
 tomorrow_glyph = font_icon("Row 3 • Flat outline tomorrow weather",
-                           '$if(br(breezy, tomorrow_icon_flat)="grain", "cloud_queue", br(breezy, tomorrow_icon_flat))$', 28, 137, 23)
+                           "$br(breezy, tomorrow_icon_flat)$", 28, 137, 23)
 
 # Match the tomorrow glyph with the pale-blue third-row text instead of
 # displaying it in stark white. Current weather stays brighter above.
@@ -144,7 +144,7 @@ root["viewgroup_items"] = [background] + outlines + texts + [
     current_glyph, tomorrow_glyph
 ]
 preset["preset_info"].update(
-    title="Breezy Minimal v9 • Balanced",
+    title="Breezy Minimal v10 • Meteo",
     description=(
         "Flat, transparent, two-column widget. Date+alarm on one line; "
         "Today high/low below. Right: temperature, Like+wind+humidity, "
@@ -152,7 +152,7 @@ preset["preset_info"].update(
     )
 )
 
-out = "dist/Breezy_Minimal_Balanced_v9.kwgt"
+out = "dist/Breezy_Minimal_Meteo_v10.kwgt"
 os.makedirs("dist", exist_ok=True)
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as output:
     for name in archive.namelist():
@@ -184,17 +184,21 @@ with zipfile.ZipFile(out) as result:
     assert m[16]["position_offset_y"] == 137
     assert m[16]["paint_color"] == COLOR_SOFT
     assert m[15]["paint_color"] == COLOR_MAIN
+    assert m[15]["icon_set"].endswith("/meteo.ttf")
+    assert m[16]["icon_set"].endswith("/meteo.ttf")
+    assert m[15]["internal_formulas"]["icon_icon"] == "$br(breezy, icon_flat)$"
+    assert m[16]["internal_formulas"]["icon_icon"] == "$br(breezy, tomorrow_icon_flat)$"
     assert 'tc(reg' in m[13]["text_expression"]
-    assert "cloud_queue" in m[16]["internal_formulas"]["icon_icon"]
+    assert m[16]["internal_formulas"]["icon_icon"] == "$br(breezy, tomorrow_icon_flat)$"
     expressions = json.dumps(obj, ensure_ascii=False)
     for variable in (
         "temp", "details", "today_compact", "tomorrow_compact",
         "icon_flat", "tomorrow_icon_flat"
     ):
         assert f"br(breezy, {variable})" in expressions, variable
-    assert "cloud_queue" in expressions and "material.ttf" in expressions
+    assert "Cloud5" in expressions and "meteo.ttf" in expressions
     assert "org.breezyweather" in expressions
     assert "SHOW_ALARMS" in expressions and "APP_CALENDAR" in expressions
     assert "BREEZY / LIVE" not in expressions
-print("V9_PRESET_VALIDATED", [(x["internal_type"], x.get("internal_title")) for x in m])
+print("V10_PRESET_VALIDATED", [(x["internal_type"], x.get("internal_title")) for x in m])
 print("FILE", out, os.stat(out).st_size, "bytes")

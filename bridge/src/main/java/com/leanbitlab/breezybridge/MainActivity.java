@@ -106,7 +106,7 @@ public final class MainActivity extends Activity {
         main.addView(title);
         TextView caption = text(
             "Передача погоды без интернета и геолокации.\n" +
-            "В Breezy включи передачу в Lwidget и обнови прогноз.",
+            "Разреши доступ к данным Breezy, затем обнови прогноз.",
             14, MUTED);
         caption.setPadding(0, dp(6), 0, dp(12));
         main.addView(caption);
@@ -114,15 +114,34 @@ public final class MainActivity extends Activity {
         status = text("", 14, ACCENT);
         main.addView(status);
 
+        Button grant = new Button(this);
+        grant.setText("Разрешить доступ к Breezy");
+        grant.setOnClickListener(v -> {
+            String needed = ProviderBridge.permissionToRequest(this);
+            if (needed == null) {
+                Toast.makeText(this, ProviderBridge.status(this), Toast.LENGTH_LONG).show();
+            } else {
+                requestPermissions(new String[]{needed}, 42);
+            }
+        });
+        main.addView(grant);
+
         Button resend = new Button(this);
-        resend.setText("Передать последние данные в KWGT");
+        resend.setText("Получить данные Breezy и передать в KWGT");
         resend.setOnClickListener(v -> {
-            boolean ok = WeatherReceiver.resendCached(this);
-            loadLatest();
-            drawList();
-            Toast.makeText(this,
-                ok ? "Отправлено в KWGT" : "Данных нет — обнови прогноз в Breezy",
-                Toast.LENGTH_LONG).show();
+            resend.setEnabled(false);
+            new Thread(() -> {
+                boolean ok = ProviderBridge.refreshAndPublish(getApplicationContext());
+                runOnUiThread(() -> {
+                    resend.setEnabled(true);
+                    loadLatest();
+                    drawList();
+                    Toast.makeText(this,
+                        ok ? "Погода отправлена в KWGT" :
+                            "Не удалось получить данные — проверь разрешение и версию Breezy",
+                        Toast.LENGTH_LONG).show();
+                });
+            }, "breezy-kwgt-manual").start();
         });
         main.addView(resend);
 
@@ -162,6 +181,19 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @Override public void onRequestPermissionsResult(int requestCode,
+                                                      String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        loadLatest();
+        if (requestCode == 42 && grantResults.length > 0 &&
+            grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            new Thread(() -> {
+                ProviderBridge.refreshAndPublish(getApplicationContext());
+                runOnUiThread(() -> { loadLatest(); drawList(); });
+            }, "breezy-kwgt-first-refresh").start();
+        }
+    }
+
     private void loadLatest() {
         String json = getSharedPreferences("breezy_bridge", Context.MODE_PRIVATE)
             .getString("last_json", null);
@@ -173,9 +205,10 @@ public final class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
         if (status != null) {
-            status.setText(latestValues.isEmpty()
+            String cache = latestValues.isEmpty()
                 ? "Пока нет данных от Breezy"
-                : "Данные получены • переменных: " + latestValues.size());
+                : "Данные получены • переменных: " + latestValues.size();
+            status.setText(ProviderBridge.status(this) + "\n" + cache);
         }
     }
 

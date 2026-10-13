@@ -7,13 +7,12 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Breezy sends Gadgetbridge updates explicitly to this installed package.
-        // This is a lightweight replacement for Lwidget; the two cannot coexist.
-        applicationId = "com.leanbitlab.lwidget"
+        // Independent app ID: uses Breezy ContentProvider, coexists with Lwidget.
+        applicationId = "com.rezz1dent.breezykwgtbridge"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1-bridge"
+        versionCode = 2
+        versionName = "0.2-provider-preview"
     }
 
     buildTypes {

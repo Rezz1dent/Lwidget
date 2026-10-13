@@ -1,6 +1,10 @@
 package com.leanbitlab.breezybridge;
 
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.content.Intent;
+import android.net.Uri;
+import android.provider.Settings;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -101,12 +105,13 @@ public final class MainActivity extends Activity {
         main.setPadding(dp(18), dp(20), dp(18), dp(32));
         scroll.addView(main);
 
-        TextView title = text("Breezy → KWGT Bridge", 23, MAIN);
+        TextView title = text("Breezy → KWGT • Provider", 23, MAIN);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
         main.addView(title);
         TextView caption = text(
-            "Передача погоды без интернета и геолокации.\n" +
-            "В Breezy включи передачу в Lwidget и обнови прогноз.",
+            "Независимое приложение: Breezy ContentProvider 0.x → KWGT.\n" +
+            "Не нужен Lwidget и передача в Gadgetbridge. " +
+            "Источник — первый город в Breezy. API экспериментальный.",
             14, MUTED);
         caption.setPadding(0, dp(6), 0, dp(12));
         main.addView(caption);
@@ -114,17 +119,44 @@ public final class MainActivity extends Activity {
         status = text("", 14, ACCENT);
         main.addView(status);
 
+        Button permission = new Button(this);
+        permission.setText("1. Предоставить доступ к погоде Breezy");
+        permission.setOnClickListener(v -> {
+            String name = ProviderWeather.requiredPermission(this);
+            if (name == null) {
+                Toast.makeText(this, "Установи Breezy Weather", Toast.LENGTH_LONG).show();
+            } else if (checkSelfPermission(name) == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Доступ уже разрешён", Toast.LENGTH_SHORT).show();
+            } else {
+                // Permission protection level and grant UX are controlled by Breezy.
+                requestPermissions(new String[]{name}, 11);
+            }
+        });
+        main.addView(permission);
+
         Button resend = new Button(this);
-        resend.setText("Передать последние данные в KWGT");
+        resend.setText("2. Получить данные Breezy и отправить в KWGT");
         resend.setOnClickListener(v -> {
-            boolean ok = WeatherReceiver.resendCached(this);
-            loadLatest();
-            drawList();
-            Toast.makeText(this,
-                ok ? "Отправлено в KWGT" : "Данных нет — обнови прогноз в Breezy",
-                Toast.LENGTH_LONG).show();
+            resend.setEnabled(false);
+            new Thread(() -> {
+                String result = ProviderWeather.refresh(getApplicationContext());
+                runOnUiThread(() -> {
+                    resend.setEnabled(true);
+                    loadLatest();
+                    drawList();
+                    Toast.makeText(this, result, Toast.LENGTH_LONG).show();
+                });
+            }, "provider-manual-refresh").start();
         });
         main.addView(resend);
+
+        TextView note = text(
+            "Если система не показывает запрос доступа, разреши его в настройках " +
+            "приложения. Автообновление происходит после уведомлений Breezy.\n" +
+            "Пока установлен старый мост, выключи в Breezy отправку в Lwidget, " +
+            "чтобы старые данные не перезаписывали новые.", 13, MUTED);
+        note.setPadding(0, dp(10), 0, dp(12));
+        main.addView(note);
 
         TextView hint = text(
             "Справочник переменных\nНажми на любую строку, чтобы скопировать " +
@@ -154,6 +186,18 @@ public final class MainActivity extends Activity {
         drawList();
     }
 
+    @Override public void onRequestPermissionsResult(int requestCode,
+                                                    String[] permissions,
+                                                    int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == 11) {
+            boolean granted = grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            Toast.makeText(this, granted ? "Доступ разрешён — нажми «Получить данные»" :
+                "Доступ не предоставлен", Toast.LENGTH_LONG).show();
+        }
+    }
+
     @Override protected void onResume() {
         super.onResume();
         if (entriesContainer != null) {
@@ -173,9 +217,11 @@ public final class MainActivity extends Activity {
             } catch (Exception ignored) {}
         }
         if (status != null) {
-            status.setText(latestValues.isEmpty()
-                ? "Пока нет данных от Breezy"
-                : "Данные получены • переменных: " + latestValues.size());
+            String providerState = getSharedPreferences("provider_bridge", Context.MODE_PRIVATE)
+                .getString("last_status", "Нет запроса к ContentProvider");
+            status.setText(providerState + "\n" + (latestValues.isEmpty()
+                ? "Переменные ещё не получены"
+                : "Переменных: " + latestValues.size()));
         }
     }
 

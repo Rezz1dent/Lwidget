@@ -22,7 +22,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
     public static final String EXT = "breezy";
     private static final String TAG = "BreezyKwgt";
     private static final String PREFS = "breezy_bridge";
-    private static final String[] KEYS = {
+    static final String[] KEYS = {
         "temp", "feels", "condition", "code", "icon",
         "humidity", "precip", "wind", "wind_kmh", "wind_ms",
         "wind_direction", "wind_degrees", "wind_text", "location",
@@ -188,7 +188,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
 
     private static String degreesC(double kelvin) {
         long celsius = Math.round(kelvin - 273.15);
-        return celsius + "°C";
+        return celsius + "°";
     }
 
     private static String speedMs(double kmh) {
@@ -207,7 +207,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
 
     /**
      * Only generate ranges from actually present values. The compact format
-     * saves precious space in KWGT: 8/2°C or -2/-6°C, no leading plus signs.
+     * saves precious space in KWGT: 8/2° or -2/-6°, no leading plus signs.
      */
     private static String shortRange(JSONObject obj, String highKey, String lowKey) {
         if (!has(obj, highKey) && !has(obj, lowKey)) return "";
@@ -215,7 +215,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
             Long.toString(Math.round(obj.optDouble(highKey) - 273.15)) : "—";
         String lo = has(obj, lowKey) ?
             Long.toString(Math.round(obj.optDouble(lowKey) - 273.15)) : "—";
-        return hi + "/" + lo + "°C";
+        return hi + "/" + lo + "°";
     }
 
     /** Meteorological bearings indicate the direction FROM which wind comes.
@@ -228,18 +228,21 @@ public final class WeatherReceiver extends BroadcastReceiver {
     }
 
     /**
-     * Material Icons glyph names supplied by KWGT, avoiding colored emoji.
-     * 'cloud_queue' is a thin outlined cloud close to the user reference.
+     * KWGT includes the Meteo icon font. The names are from its built-in
+     * font map; in particular Rainy3 and Rainy4 depict clouds with rain,
+     * not the old 'grain' dots from Material icons.
      */
     private static String weatherFlatIcon(int code) {
-        if (code == 800) return "wb_sunny";
-        if (code == 801 || code == 802) return "filter_drama";
-        if (code >= 200 && code <= 232) return "flash_on";
-        if (code >= 300 && code <= 531) return "grain";
-        if (code >= 600 && code <= 622) return "ac_unit";
-        if (code == 741 || code == 751) return "blur_on";
-        if (code == 771) return "air";
-        return "cloud_queue";
+        if (code == 800) return "Sun3";
+        if (code == 801 || code == 802) return "Cloudy3";
+        if (code == 803) return "Cloud3";
+        if (code == 804) return "Cloud5";
+        if (code >= 200 && code <= 232) return "Lightning5";
+        if (code >= 300 && code <= 321) return "Rainy3";
+        if (code >= 500 && code <= 531) return "Rainy4";
+        if (code >= 600 && code <= 622) return "Snowy4";
+        if (code >= 701 && code <= 781) return code == 771 ? "Windy" : "Fog";
+        return "Cloud5";
     }
 
     private static String weatherIcon(int code) {

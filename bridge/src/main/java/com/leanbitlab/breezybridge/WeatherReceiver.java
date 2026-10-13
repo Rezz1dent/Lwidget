@@ -30,7 +30,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
         "tomorrow_precip", "tomorrow_icon",
         "like", "details", "wind_arrow", "today_max", "today_min",
         "today_range", "today_compact", "tomorrow_compact",
-        "icon_flat", "tomorrow_icon_flat"
+        "icon_flat", "tomorrow_icon_flat", "icon_uri", "tomorrow_icon_uri"
     };
 
     @Override public void onReceive(Context context, Intent intent) {
@@ -99,6 +99,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
             vars.put("code", Integer.toString(code));
             vars.put("icon", weatherIcon(code));
             vars.put("icon_flat", weatherFlatIcon(code));
+            vars.put("icon_uri", FlatIconContentProvider.uri(code));
         }
         if (has(data, "currentHumidity"))
             vars.put("humidity", data.optString("currentHumidity") + "%");
@@ -176,6 +177,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
                 if (has(tomorrow, "conditionCode")) {
                     vars.put("tomorrow_icon", weatherIcon(tomorrow.optInt("conditionCode")));
                     vars.put("tomorrow_icon_flat", weatherFlatIcon(tomorrow.optInt("conditionCode")));
+                    vars.put("tomorrow_icon_uri", FlatIconContentProvider.uri(tomorrow.optInt("conditionCode")));
                 }
             }
         }

@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="org.breezyweather.READ_PROVIDER" />
+    <uses-permission android:name="org.breezyweather.debug.READ_PROVIDER" />
+    <queries>
+        <provider android:authorities="org.breezyweather.provider.weather" />
+        <provider android:authorities="org.breezyweather.debug.provider.weather" />
+    </queries>
     <application
         android:label="Breezy → KWGT Bridge"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
@@ -9,16 +15,16 @@
             android:name="com.leanbitlab.breezybridge.MainActivity"
             android:exported="true">
             <intent-filter>
-                <!-- Shown as "Open app settings" in Android's App info, not in the launcher. -->
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
         <receiver
-            android:name="com.leanbitlab.breezybridge.WeatherReceiver"
+            android:name="com.leanbitlab.breezybridge.ProviderUpdateReceiver"
             android:exported="true">
             <intent-filter>
-                <action android:name="nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER"/>
+                <action android:name="org.breezyweather.ACTION_UPDATE_NOTIFIER"/>
+                <action android:name="org.breezyweather.debug.ACTION_UPDATE_NOTIFIER"/>
             </intent-filter>
         </receiver>
     </application>

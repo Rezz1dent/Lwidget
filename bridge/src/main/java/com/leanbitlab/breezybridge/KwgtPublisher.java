@@ -30,20 +30,8 @@ public final class KwgtPublisher {
         "like", "details", "wind_arrow", "today_max", "today_min",
         "today_range", "today_compact", "tomorrow_compact",
         "icon_flat", "tomorrow_icon_flat", "is_day",
-        "icon_glyph", "tomorrow_icon_glyph"
+        "icon_mdi", "tomorrow_icon_mdi"
     };
-
-    /** Icon style for icon_glyph: glyph sets of the breezy_icons font in the preset. */
-    static final String STYLE_KEY = "icon_style";
-    static final String STYLE_FILLED = "filled";
-    static final String STYLE_OUTLINE = "outline";
-    static final String STYLE_BREEZY = "breezy";
-    static final String[] STYLES = {STYLE_FILLED, STYLE_OUTLINE, STYLE_BREEZY};
-
-    static String iconStyle(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(STYLE_KEY, STYLE_FILLED);
-    }
 
     private KwgtPublisher() {}
 
@@ -58,7 +46,7 @@ public final class KwgtPublisher {
         try {
             JSONObject data = new JSONObject(json);
             long now = System.currentTimeMillis();
-            Map<String, String> vars = variables(data, now, iconStyle(context));
+            Map<String, String> vars = variables(data, now);
             if (vars == null) return false;
 
             Intent kwgt = new Intent("org.kustom.action.SEND_VAR");
@@ -82,7 +70,7 @@ public final class KwgtPublisher {
      * Always send empty values for missing optional fields. Otherwise KWGT
      * may keep yesterday's values when a provider temporarily omits a forecast.
      */
-    static Map<String, String> variables(JSONObject data, long nowMillis, String style) {
+    static Map<String, String> variables(JSONObject data, long nowMillis) {
         if (data == null ||
             (!has(data, "currentTemp") && !has(data, "currentCondition") &&
              !has(data, "forecasts"))) {
@@ -107,8 +95,7 @@ public final class KwgtPublisher {
             vars.put("code", Integer.toString(code));
             vars.put("icon", weatherIcon(code, day));
             vars.put("icon_flat", weatherFlatIcon(code, day));
-            vars.put("icon_glyph",
-                glyph(style, data.optString("currentWeatherCode", ""), code, day));
+            vars.put("icon_mdi", mdiIcon(data.optString("currentWeatherCode", ""), code, day));
         }
         if (has(data, "currentHumidity"))
             vars.put("humidity", data.optString("currentHumidity") + "%");
@@ -185,8 +172,8 @@ public final class KwgtPublisher {
                 if (has(tomorrow, "conditionCode")) {
                     vars.put("tomorrow_icon", weatherIcon(tomorrow.optInt("conditionCode"), true));
                     vars.put("tomorrow_icon_flat", weatherFlatIcon(tomorrow.optInt("conditionCode"), true));
-                    vars.put("tomorrow_icon_glyph", glyph(style,
-                        tomorrow.optString("weatherCode", ""), tomorrow.optInt("conditionCode"), true));
+                    vars.put("tomorrow_icon_mdi", mdiIcon(tomorrow.optString("weatherCode", ""),
+                        tomorrow.optInt("conditionCode"), true));
                 }
             }
         }
@@ -301,35 +288,25 @@ public final class KwgtPublisher {
     }
 
     /**
-     * Glyph name in the breezy_icons font for the chosen style. Breezy's own condition
-     * ID is preferred; caches written before 1.3 only have the legacy code.
+     * Material Design Icons name, as in Breezy Weather's own widgets
+     * (KWGT icon set: Iconify, "mdi"). Breezy's condition ID is preferred;
+     * caches written before 1.3 only have the legacy code.
      */
-    static String glyph(String style, String breezyCode, int legacyCode, boolean day) {
-        if (STYLE_FILLED.equals(style)) return weatherFlatIcon(legacyCode, day);
+    static String mdiIcon(String breezyCode, int legacyCode, boolean day) {
         String condition = breezyCode.isEmpty() ? breezyCondition(legacyCode) : breezyCode;
-        if (STYLE_BREEZY.equals(style)) {
-            switch (condition) {
-                case "clear": return day ? "mdi_clear_day" : "mdi_clear_night";
-                case "partly_cloudy": return day ? "mdi_partly_cloudy_day" : "mdi_partly_cloudy_night";
-                case "cloudy": case "rain": case "snow": case "sleet": case "hail":
-                case "thunder": case "thunderstorm": case "fog": case "haze": case "wind":
-                    return "mdi_" + condition;
-                default: return "mdi_cloudy";
-            }
-        }
-        // Outline glyphs of the Meteo font; its "haze" glyph is a cloud with rain and snow.
         switch (condition) {
-            case "clear": return day ? "sun" : "moon";
-            case "partly_cloudy": return day ? "cloudy" : "cloud";
-            case "rain": return "rainy2";
-            case "snow": return "snowy";
-            case "sleet": return "haze";
-            case "hail": return "hail";
-            case "thunder": return "lightning";
-            case "thunderstorm": return "lightning2";
-            case "fog": case "haze": return day ? "fogday" : "fognight";
-            case "wind": return "wind";
-            default: return "cloud2";
+            case "clear": return day ? "white-balance-sunny" : "weather-night";
+            case "partly_cloudy": return day ? "weather-partly-cloudy" : "weather-night-partly-cloudy";
+            case "rain": return "weather-pouring";
+            case "snow": return "weather-snowy";
+            case "sleet": return "weather-snowy-rainy";
+            case "hail": return "weather-hail";
+            case "thunder": return "weather-lightning";
+            case "thunderstorm": return "weather-lightning-rainy";
+            case "fog": return "weather-fog";
+            case "haze": return "blur";
+            case "wind": return "weather-windy";
+            default: return "weather-cloudy";
         }
     }
 

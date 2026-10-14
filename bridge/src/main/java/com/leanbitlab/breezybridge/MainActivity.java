@@ -65,7 +65,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_now, "code", R.string.var_code),
         new Entry(R.string.group_now, "icon", R.string.var_icon),
         new Entry(R.string.group_now, "icon_flat", R.string.var_icon_flat),
-        new Entry(R.string.group_now, "icon_glyph", R.string.var_icon_glyph),
+        new Entry(R.string.group_now, "icon_mdi", R.string.var_icon_mdi),
         new Entry(R.string.group_now, "is_day", R.string.var_is_day),
         new Entry(R.string.group_now, "humidity", R.string.var_humidity),
         new Entry(R.string.group_now, "precip", R.string.var_precip),
@@ -89,7 +89,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_tomorrow, "tomorrow_precip", R.string.var_tomorrow_precip),
         new Entry(R.string.group_tomorrow, "tomorrow_icon", R.string.var_tomorrow_icon),
         new Entry(R.string.group_tomorrow, "tomorrow_icon_flat", R.string.var_tomorrow_icon_flat),
-        new Entry(R.string.group_tomorrow, "tomorrow_icon_glyph", R.string.var_tomorrow_icon_glyph),
+        new Entry(R.string.group_tomorrow, "tomorrow_icon_mdi", R.string.var_tomorrow_icon_mdi),
         new Entry(R.string.group_other, "location", R.string.var_location)
     };
 
@@ -222,20 +222,6 @@ public final class MainActivity extends Activity {
     private void addSettings(LinearLayout main) {
         SharedPreferences prefs = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE);
 
-        String[] styleNames = {
-            getString(R.string.style_filled),
-            getString(R.string.style_outline),
-            getString(R.string.style_breezy)
-        };
-        addChoice(main, R.string.label_icon_style, styleNames,
-            indexOf(KwgtPublisher.STYLES, KwgtPublisher.iconStyle(this)), index -> {
-                prefs.edit().putString(KwgtPublisher.STYLE_KEY, KwgtPublisher.STYLES[index]).apply();
-                new Thread(() -> {
-                    KwgtPublisher.resendCached(getApplicationContext());
-                    runOnUiThread(() -> { loadLatest(); drawList(); });
-                }, "breezy-kwgt-style").start();
-            });
-
         addChoice(main, R.string.label_language, LANGUAGE_NAMES,
             indexOf(LANGUAGES, prefs.getString(LANGUAGE_KEY, LANGUAGES[0])), index -> {
                 prefs.edit().putString(LANGUAGE_KEY, LANGUAGES[index]).apply();
@@ -319,8 +305,7 @@ public final class MainActivity extends Activity {
         if (json != null) {
             try {
                 Map<String, String> values =
-                    KwgtPublisher.variables(new JSONObject(json), System.currentTimeMillis(),
-                        KwgtPublisher.iconStyle(this));
+                    KwgtPublisher.variables(new JSONObject(json), System.currentTimeMillis());
                 if (values != null) latestValues = values;
             } catch (Exception ignored) {}
         }

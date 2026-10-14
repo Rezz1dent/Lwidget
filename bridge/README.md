@@ -27,27 +27,22 @@ and `0` at night. The bridge re-sends cached data at the next sunrise/sunset wit
 so the icon switches even without a Breezy refresh (precision: Breezy's hourly steps, plus a few
 minutes of alarm delay).
 
-### Icon styles
+### Breezy icons
 
-`icon_glyph` and `tomorrow_icon_glyph` hold a glyph name in the `breezy_meteo` font (extended with the Breezy icons) bundled with
-the preset `presets/Breezy_Minimal_v26__Icons.kwgt`. The style is chosen on the bridge settings
-screen, the widget formula stays `$br(breezy, icon_glyph)$`:
+`icon_mdi` and `tomorrow_icon_mdi` hold the [Material Design Icons](https://pictogrammers.com/library/mdi/)
+name of the weather, as used by Breezy Weather's own widgets (`weather-night`,
+`weather-partly-cloudy`, `weather-pouring`...). KWGT 3.80+ has these icons built in:
+in the icon element choose the icon set **Iconify → Material Design Icons (mdi)** and use the
+formula `$br(breezy, icon_mdi)$`. Preset: `presets/Breezy_Minimal_v27__Breezy_icons.kwgt`
+(the icon set is selected once in the editor). `icon_flat` (built-in Meteo font) still works.
 
-- **Filled (Meteo)**: the same icons as `icon_flat`.
-- **Outline (Meteo)**: outline glyphs of the same font, with fog by day/night and moon behind a cloud.
-- **Breezy (Material Design Icons)**: the icons of Breezy Weather's own widgets, including the
-  moon with stars.
-
-The preset is built from a Meteo preset with `scripts/build_breezy_preset.py`
-(`pip install fonttools`). The settings screen language (English by default, or Russian) is
-chosen on the same screen.
+Icon fonts bundled inside a preset do not work on the home screen (the KWGT editor shows them,
+the widget shows "?"), so the bridge relies on icon sets built into KWGT.
 
 ### Credits
 
-- Weather icons of the "Breezy" style: [Material Design Icons](https://pictogrammers.com/library/mdi/)
-  by Pictogrammers, Apache License 2.0 (paths in `scripts/mdi_weather_icons.json`, as used by
-  Breezy Weather's widgets).
-- Filled and outline styles: the Meteo icon font (IcoMoon) bundled with the original preset.
+- Weather icons: [Material Design Icons](https://pictogrammers.com/library/mdi/) by Pictogrammers,
+  Apache License 2.0, provided by KWGT through Iconify. The bridge only sends icon names.
 
 ### Notes
 

@@ -11,8 +11,8 @@ Custom icon fonts bundled in the preset were tried (v24-v26) and do not work: th
 KWGT editor draws them, but the home-screen widget shows "?". The old Meteo icons
 only worked because Meteo is a font built into KWGT.
 
-The Iconify icon set itself is chosen once in the KWGT editor (its preset JSON
-format is not documented); the preset only gets the formula.
+The Iconify icon set is stored by KWGT as "iconify://mdi?name=Material%20Design%20Icons"
+(taken from a preset exported by KWGT, v28).
 """
 import json
 import sys
@@ -20,7 +20,8 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v27 • Breezy icons"
+TITLE = "Breezy Minimal v28 • Breezy icons"
+ICON_SET = "iconify://mdi?name=Material%20Design%20Icons"
 ICON_FORMULA = "$br(breezy, icon_mdi)$"
 
 
@@ -39,6 +40,7 @@ def main(base, target):
     icons = 0
     for item in preset["preset_root"]["viewgroup_items"]:
         if "icon_set" in item and "icon_icon" in item.get("internal_formulas", {}):
+            item["icon_set"] = ICON_SET
             item["internal_formulas"]["icon_icon"] = ICON_FORMULA
             item["internal_title"] = "Row 1 • Current weather icon (Breezy, Iconify mdi)"
             icons += 1
@@ -46,6 +48,8 @@ def main(base, target):
 
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:
         for entry in source.infolist():
+            if entry.filename.startswith("icons/"):
+                continue  # Meteo font is no longer used
             data = source.read(entry.filename)
             if entry.filename == "preset.json":
                 data = json.dumps(preset, ensure_ascii=False, indent=2).encode("utf-8")

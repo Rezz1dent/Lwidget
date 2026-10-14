@@ -33,8 +33,9 @@ minutes of alarm delay).
 name of the weather, as used by Breezy Weather's own widgets (`weather-night`,
 `weather-partly-cloudy`, `weather-pouring`...). KWGT 3.80+ has these icons built in:
 in the icon element choose the icon set **Iconify → Material Design Icons (mdi)** and use the
-formula `$br(breezy, icon_mdi)$`. Preset: `presets/Breezy_Minimal_v27__Breezy_icons.kwgt`
-(the icon set is selected once in the editor). `icon_flat` (built-in Meteo font) still works.
+formula `$br(breezy, icon_mdi)$`. Ready preset: `presets/Breezy_Minimal_v28__Breezy_icons.kwgt`
+(exported from KWGT; the icon set is stored as `iconify://mdi?name=Material%20Design%20Icons`).
+`icon_flat` (built-in Meteo font) still works.
 
 Icon fonts bundled inside a preset do not work on the home screen (the KWGT editor shows them,
 the widget shows "?"), so the bridge relies on icon sets built into KWGT.

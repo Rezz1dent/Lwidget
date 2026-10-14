@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v34 • Manrope"
+TITLE = "Breezy Minimal v35 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -65,6 +65,14 @@ CLOCK_X = 40.0
 MIDDLE_ROW_DOWN = 8.0
 BIG_TEXTS = ("Clock • large", "Row 1 • Breezy temperature")
 MIDDLE_ROWS = ("Date • next to alarm", "Row 2 • Like / arrow wind / humidity")
+# Small rows: size 23 and the bottom row 11 lower, as set by hand in the editor (test4).
+ROW_TEXT_SIZE = 23.0
+BOTTOM_ROW_DOWN = 11.0
+BOTTOM_ROWS = ("Today • Breezy high/low", "Row 3 • Tomorrow maximum/minimum")
+# Umbrella sized to the rows: icon ~ row text size, centered on the text.
+UMBRELLA_ICON_SIZE = 25.0
+UMBRELLA_ICON_Y = 4.0
+UMBRELLA_TEXT_X = UMBRELLA_ICON_SIZE + 4.0
 # Tabular digits are 0.62 em wide: "HH" is 1.24 * size.
 MINUTES_X = CLOCK_X + round(1.24 * CLOCK_SIZE)
 
@@ -100,6 +108,10 @@ def main(base, fonts_dir, target):
             continue  # merged into the date row: Manrope is wider, the rows would overlap
         if title in BIG_TEXTS:
             item["text_size"] = CLOCK_SIZE
+        if item["internal_type"] == "TextModule" and title not in BIG_TEXTS:
+            item["text_size"] = ROW_TEXT_SIZE
+        if title in BOTTOM_ROWS:
+            item["position_offset_y"] = item.get("position_offset_y", 0.0) + BOTTOM_ROW_DOWN
         if title in MIDDLE_ROWS:
             item["position_offset_y"] = item.get("position_offset_y", 0.0) + MIDDLE_ROW_DOWN
         if item["internal_type"] == "TextModule":
@@ -156,17 +168,19 @@ def main(base, fonts_dir, target):
                   "internal_title": "Umbrella icon",
                   "icon_set": "iconify://mdi?name=Material%20Design%20Icons",
                   "icon_icon": "umbrella-outline",
-                  "icon_size": 22.0,
+                  "icon_size": UMBRELLA_ICON_SIZE,
                   "paint_color": SECONDARY,
                   "position_anchor": "TOPLEFT",
-                  }, **shadow(22.0, **UMBRELLA_SHADOW)),
+                  "position_offset_y": UMBRELLA_ICON_Y,
+                  }, **shadow(UMBRELLA_ICON_SIZE, **UMBRELLA_SHADOW)),
             dict({"internal_type": "TextModule",
                   "internal_title": "Umbrella percent",
                   "text_expression": "$%s + \"%%\"$" % PRECIP,
                   "text_family": FONT % ROW_FONT,
                   "paint_color": SECONDARY,
                   "position_anchor": "TOPLEFT",
-                  "position_offset_x": 26.0}, **shadow(DEFAULT_TEXT_SIZE)),
+                  "text_size": ROW_TEXT_SIZE,
+                  "position_offset_x": UMBRELLA_TEXT_X}, **shadow(ROW_TEXT_SIZE)),
         ],
     })
     for key in ("internal_events",):

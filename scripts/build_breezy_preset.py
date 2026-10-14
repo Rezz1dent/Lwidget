@@ -6,7 +6,7 @@ Usage: build_breezy_preset.py BASE.kwgt OUT.kwgt
 Takes a preset that bundles the Meteo icon font (icons/meteo.ttf + meteo.json),
 adds the Breezy Weather widget icons (Material Design Icons, Apache-2.0, see
 scripts/mdi_weather_icons.json) as extra glyphs, stores the result as
-icons/breezy_icons.ttf + breezy_icons.json and points the weather icon at
+the same icons/meteo.ttf + meteo.json and points the weather icon at
 $br(breezy, icon_glyph)$, so the bridge decides the style (filled, outline, Breezy).
 
 Requires: pip install fonttools
@@ -28,9 +28,12 @@ from fontTools.svgLib.path import parse_path
 from fontTools.ttLib import TTFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-FONT_NAME = "breezy_icons"
+# Keep the file name and internal font name of the original Meteo font: KWGT showed
+# "?" on the home screen for the same font saved as icons/breezy_icons.ttf
+# (fine in the editor), while icons/meteo.ttf is known to work.
+FONT_NAME = "meteo"
 FIRST_CODE = 0xE980
-TITLE = "Breezy Minimal v24 • Icons"
+TITLE = "Breezy Minimal v25 • Icons"
 ICON_FORMULA = "$br(breezy, icon_glyph)$"
 # MDI glyphs leave more padding than Meteo ones: enlarge them around the center
 # so that switching the style keeps a similar visual size.
@@ -81,9 +84,6 @@ def build_font(meteo_ttf, meteo_json, mdi):
 
     # glyf[...] = glyph already appended the names to the glyph order.
     font.setGlyphOrder(font["glyf"].glyphOrder)
-    for record in font["name"].names:
-        if record.nameID in (1, 3, 4, 6):
-            record.string = FONT_NAME
     out = io.BytesIO()
     font.save(out)
     return out.getvalue(), json.dumps(selection, indent="\t").encode("utf-8")
@@ -117,7 +117,7 @@ def main(base, target):
 
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:
         for entry in source.infolist():
-            if entry.filename.startswith("icons/meteo."):
+            if entry.filename.startswith("icons/%s." % FONT_NAME):
                 continue
             data = source.read(entry.filename)
             if entry.filename == "preset.json":

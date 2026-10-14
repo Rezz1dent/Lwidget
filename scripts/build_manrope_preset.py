@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v37 • Manrope"
+TITLE = "Breezy Minimal v38 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -82,8 +82,25 @@ ROW_GAP = 8    # between "Tomorrow" and the umbrella
 MINUTES_X = CLOCK_X + round(1.24 * CLOCK_SIZE)
 
 # Tomorrow's precipitation arrives as "60%": keep the digits for the comparison.
-PRECIP = 'tc(reg, br(breezy, tomorrow_precip), "[^0-9]", "")'
-RAIN = "%s >= 70" % PRECIP
+# Digits only ("" when Breezy has no value); 0 when missing, so the test mode shows "0%".
+RAW_PRECIP = 'tc(reg, br(breezy, tomorrow_precip), "[^0-9]", "")'
+PRECIP = 'if(tc(len, %s) > 0, %s, 0)' % (RAW_PRECIP, RAW_PRECIP)
+
+# Umbrella settings live in the root's "Globals" tab (format from a KWGT export):
+#   umbrella_test (switch) - show the umbrella regardless of the forecast;
+#   umbrella_min (number)  - minimum precipitation in %, 70 when empty or 0.
+GLOBALS = {
+    "umbrella_test": {"index": 1, "type": "SWITCH", "title": "Umbrella: always show (test)"},
+    "umbrella_min": {"index": 2, "type": "NUMBER", "title": "Umbrella: minimum precipitation, %",
+                     "value": 70},
+}
+THRESHOLD = "if(gv(umbrella_min) > 0, gv(umbrella_min), 70)"
+
+
+def rain_if(then, otherwise):
+    """KWGT expression: `then` when the umbrella is shown, else `otherwise`."""
+    return "if(gv(umbrella_test) = 1, %s, if(%s >= %s, %s, %s))" % (
+        then, PRECIP, THRESHOLD, then, otherwise)
 
 
 def umbrella_icon_x(edge):
@@ -106,6 +123,7 @@ def main(base, fonts_dir, target):
         "Breezy Weather (Iconify mdi), data from Breezy Bridge 1.4+.")
 
     preset["preset_root"]["config_scale_value"] = ROOT_SCALE
+    preset["preset_root"]["globals_list"] = GLOBALS
     items = preset["preset_root"]["viewgroup_items"]
     by_title = {item.get("internal_title"): item for item in items}
     result = []
@@ -156,8 +174,8 @@ def main(base, fonts_dir, target):
             x = item.get("position_offset_x", 40.0)
             item.setdefault("internal_toggles", {})["position_offset_x"] = 10
             item.setdefault("internal_formulas", {})["position_offset_x"] = (
-                "$if(%s, %s + %d, %d)$" % (
-                    RAIN, umbrella_icon_x(x), UMBRELLA_ICON_SIZE + ROW_GAP, x))
+                "$%s$" % rain_if("%s + %d" % (umbrella_icon_x(x), UMBRELLA_ICON_SIZE + ROW_GAP),
+                                 "%d" % x))
             umbrella_y = item.get("position_offset_y", 145.0)
             umbrella_x = x
         if item["internal_type"] == "FontIconModule":
@@ -171,8 +189,8 @@ def main(base, fonts_dir, target):
     events = {"internal_events": row["internal_events"]} if "internal_events" in row else {}
     result.append(dict({
         "internal_type": "TextModule",
-        "internal_title": "Umbrella • percent (rain ≥ 70%)",
-        "text_expression": "$if(%s, %s + \"%%\", \"\")$" % (RAIN, PRECIP),
+        "internal_title": "Umbrella • percent (see Globals)",
+        "text_expression": "$%s$" % rain_if('%s + "%%"' % PRECIP, '""'),
         "text_family": FONT % ROW_FONT,
         "text_size": ROW_TEXT_SIZE,
         "paint_color": SECONDARY,
@@ -182,7 +200,7 @@ def main(base, fonts_dir, target):
     }, **shadow(ROW_TEXT_SIZE), **events))
     result.append(dict({
         "internal_type": "FontIconModule",
-        "internal_title": "Umbrella • icon (rain ≥ 70%)",
+        "internal_title": "Umbrella • icon (see Globals)",
         "icon_set": "iconify://mdi?name=Material%20Design%20Icons",
         "icon_icon": "umbrella-outline",
         "icon_size": UMBRELLA_ICON_SIZE,
@@ -195,9 +213,9 @@ def main(base, fonts_dir, target):
     result[-1]["internal_toggles"] = {
         "paint_color": 10, "fx_shadow_color": 10, "position_offset_x": 10}
     result[-1]["internal_formulas"] = {
-        "paint_color": "$if(%s, \"%s\", \"#00FFFFFF\")$" % (RAIN, SECONDARY),
-        "fx_shadow_color": "$if(%s, \"%s\", \"#00000000\")$" % (
-            RAIN, result[-1]["fx_shadow_color"]),
+        "paint_color": "$%s$" % rain_if('"%s"' % SECONDARY, '"#00FFFFFF"'),
+        "fx_shadow_color": "$%s$" % rain_if('"%s"' % result[-1]["fx_shadow_color"],
+                                            '"#00000000"'),
         "position_offset_x": "$%s$" % umbrella_icon_x(umbrella_x),
     }
     for item in result:

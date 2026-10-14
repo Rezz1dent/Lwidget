@@ -58,6 +58,6 @@
     <string name="style_filled">Заливка (Meteo)</string>
     <string name="style_outline">Контурные (Meteo)</string>
     <string name="style_breezy">Как в Breezy (Material Design Icons)</string>
-    <string name="var_icon_glyph">Иконка погоды в выбранном стиле (шрифт Meteo из пресета v25)</string>
-    <string name="var_tomorrow_icon_glyph">Иконка погоды завтра в выбранном стиле (шрифт Meteo из пресета v25)</string>
+    <string name="var_icon_glyph">Иконка погоды в выбранном стиле (шрифт Meteo из пресета v26)</string>
+    <string name="var_tomorrow_icon_glyph">Иконка погоды завтра в выбранном стиле (шрифт Meteo из пресета v26)</string>
 </resources>

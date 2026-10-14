@@ -29,8 +29,8 @@ minutes of alarm delay).
 
 ### Icon styles
 
-`icon_glyph` and `tomorrow_icon_glyph` hold a glyph name in the `meteo` font (extended with the Breezy icons) bundled with
-the preset `presets/Breezy_Minimal_v25__Icons.kwgt`. The style is chosen on the bridge settings
+`icon_glyph` and `tomorrow_icon_glyph` hold a glyph name in the `breezy_meteo` font (extended with the Breezy icons) bundled with
+the preset `presets/Breezy_Minimal_v26__Icons.kwgt`. The style is chosen on the bridge settings
 screen, the widget formula stays `$br(breezy, icon_glyph)$`:
 
 - **Filled (Meteo)**: the same icons as `icon_flat`.

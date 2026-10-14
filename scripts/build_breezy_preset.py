@@ -6,7 +6,7 @@ Usage: build_breezy_preset.py BASE.kwgt OUT.kwgt
 Takes a preset that bundles the Meteo icon font (icons/meteo.ttf + meteo.json),
 adds the Breezy Weather widget icons (Material Design Icons, Apache-2.0, see
 scripts/mdi_weather_icons.json) as extra glyphs, stores the result as
-the same icons/meteo.ttf + meteo.json and points the weather icon at
+icons/breezy_meteo.ttf + breezy_meteo.json and points the weather icon at
 $br(breezy, icon_glyph)$, so the bridge decides the style (filled, outline, Breezy).
 
 Requires: pip install fonttools
@@ -28,12 +28,13 @@ from fontTools.svgLib.path import parse_path
 from fontTools.ttLib import TTFont
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-# Keep the file name and internal font name of the original Meteo font: KWGT showed
-# "?" on the home screen for the same font saved as icons/breezy_icons.ttf
-# (fine in the editor), while icons/meteo.ttf is known to work.
-FONT_NAME = "meteo"
+# Internal font family stays "icomoon" like the original Meteo font. The file gets
+# its own name: KWGT caches icon fonts by file name, so a combined font saved as
+# icons/meteo.ttf was looked up in an older cached meteo.json on the home screen
+# (wrong glyph), while a renamed family showed "?".
+FONT_NAME = "breezy_meteo"
 FIRST_CODE = 0xE980
-TITLE = "Breezy Minimal v25 • Icons"
+TITLE = "Breezy Minimal v26 • Icons"
 ICON_FORMULA = "$br(breezy, icon_glyph)$"
 # MDI glyphs leave more padding than Meteo ones: enlarge them around the center
 # so that switching the style keeps a similar visual size.
@@ -117,7 +118,7 @@ def main(base, target):
 
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:
         for entry in source.infolist():
-            if entry.filename.startswith("icons/%s." % FONT_NAME):
+            if entry.filename.startswith(("icons/meteo.", "icons/%s." % FONT_NAME)):
                 continue
             data = source.read(entry.filename)
             if entry.filename == "preset.json":

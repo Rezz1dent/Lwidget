@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v35 • Manrope"
+TITLE = "Breezy Minimal v36 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -72,14 +72,15 @@ BOTTOM_ROWS = ("Today • Breezy high/low", "Row 3 • Tomorrow maximum/minimum"
 # Umbrella sized to the rows: icon ~ row text size, centered on the text.
 UMBRELLA_ICON_SIZE = 25.0
 UMBRELLA_ICON_Y = 4.0
-UMBRELLA_TEXT_X = UMBRELLA_ICON_SIZE + 4.0
+# Room for "70%"-"99%" at size 23 (Manrope Regular), right-aligned at the row's edge.
+PERCENT_WIDTH = 50.0
 # Tabular digits are 0.62 em wide: "HH" is 1.24 * size.
 MINUTES_X = CLOCK_X + round(1.24 * CLOCK_SIZE)
 
 # Tomorrow's precipitation arrives as "60%": keep the digits for the comparison.
 PRECIP = 'tc(reg, br(breezy, tomorrow_precip), "[^0-9]", "")'
 RAIN = "%s >= 70" % PRECIP
-UMBRELLA_WIDTH = 85
+UMBRELLA_WIDTH = 89  # percent + gap + icon + gap before "Tomorrow"
 
 
 def main(base, fonts_dir, target):
@@ -154,38 +155,35 @@ def main(base, fonts_dir, target):
             item.update(shadow(item.get("icon_size", 50.0), **ICON_SHADOW))
         result.append(item)
 
+    # Two top-level elements instead of a group: inside the Overlap group KWGT drew
+    # the percent on top of the icon (v35). Hidden without rain by an empty text and
+    # a transparent icon color, both driven by the same condition.
     row = by_title["Row 3 • Tomorrow maximum/minimum"]
-    result.append({
-        "internal_type": "OverlapLayerModule",
-        "internal_title": "Umbrella • tomorrow precipitation ≥ 70%",
+    events = {"internal_events": row["internal_events"]} if "internal_events" in row else {}
+    result.append(dict({
+        "internal_type": "TextModule",
+        "internal_title": "Umbrella • percent (rain ≥ 70%)",
+        "text_expression": "$if(%s, %s + \"%%\", \"\")$" % (RAIN, PRECIP),
+        "text_family": FONT % ROW_FONT,
+        "text_size": ROW_TEXT_SIZE,
+        "paint_color": SECONDARY,
         "position_anchor": "TOPRIGHT",
         "position_offset_x": umbrella_x,
         "position_offset_y": umbrella_y,
-        "internal_toggles": {"config_visible": 10},
-        "internal_formulas": {"config_visible": "$if(%s, ALWAYS, REMOVE)$" % RAIN},
-        "viewgroup_items": [
-            dict({"internal_type": "FontIconModule",
-                  "internal_title": "Umbrella icon",
-                  "icon_set": "iconify://mdi?name=Material%20Design%20Icons",
-                  "icon_icon": "umbrella-outline",
-                  "icon_size": UMBRELLA_ICON_SIZE,
-                  "paint_color": SECONDARY,
-                  "position_anchor": "TOPLEFT",
-                  "position_offset_y": UMBRELLA_ICON_Y,
-                  }, **shadow(UMBRELLA_ICON_SIZE, **UMBRELLA_SHADOW)),
-            dict({"internal_type": "TextModule",
-                  "internal_title": "Umbrella percent",
-                  "text_expression": "$%s + \"%%\"$" % PRECIP,
-                  "text_family": FONT % ROW_FONT,
-                  "paint_color": SECONDARY,
-                  "position_anchor": "TOPLEFT",
-                  "text_size": ROW_TEXT_SIZE,
-                  "position_offset_x": UMBRELLA_TEXT_X}, **shadow(ROW_TEXT_SIZE)),
-        ],
-    })
-    for key in ("internal_events",):
-        if key in row:
-            result[-1][key] = row[key]
+    }, **shadow(ROW_TEXT_SIZE), **events))
+    result.append(dict({
+        "internal_type": "FontIconModule",
+        "internal_title": "Umbrella • icon (rain ≥ 70%)",
+        "icon_set": "iconify://mdi?name=Material%20Design%20Icons",
+        "icon_icon": "umbrella-outline",
+        "icon_size": UMBRELLA_ICON_SIZE,
+        "paint_color": SECONDARY,
+        "position_anchor": "TOPRIGHT",
+        "position_offset_x": umbrella_x + PERCENT_WIDTH + 4,
+        "position_offset_y": umbrella_y + UMBRELLA_ICON_Y,
+        "internal_toggles": {"paint_color": 10},
+        "internal_formulas": {"paint_color": "$if(%s, \"%s\", \"#00FFFFFF\")$" % (RAIN, SECONDARY)},
+    }, **shadow(UMBRELLA_ICON_SIZE, **UMBRELLA_SHADOW), **events))
     for item in result:
         if item["internal_type"] != "ShapeModule":
             item["position_offset_y"] = item.get("position_offset_y", 0.0) - RAISE

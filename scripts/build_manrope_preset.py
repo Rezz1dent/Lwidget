@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v33 • Manrope"
+TITLE = "Breezy Minimal v34 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -46,8 +46,11 @@ def shadow(size, distance=1, blur=None, direction=15):
 MINUTES_SHADOW = {}
 ICON_SHADOW = {"blur": 10, "direction": 0}
 UMBRELLA_SHADOW = {"blur": 2}
-# Raise everything so the content is centered in the widget frame (v31 sat ~18 low).
-RAISE = 18.0
+# Raise everything so the content is centered in the widget frame
+# (v31 sat ~18 low; v33 raised by 18 was a bit high, so 8).
+RAISE = 8.0
+# Default widget scale (Root layer "Scale").
+ROOT_SCALE = 155.0
 
 
 # Manrope's ascent is 0.138 em larger than the system font's: move the text up
@@ -85,6 +88,7 @@ def main(base, fonts_dir, target):
         "Tomorrow only when it is 70% or more. Weather icon: Material Design Icons as in "
         "Breezy Weather (Iconify mdi), data from Breezy Bridge 1.4+.")
 
+    preset["preset_root"]["config_scale_value"] = ROOT_SCALE
     items = preset["preset_root"]["viewgroup_items"]
     by_title = {item.get("internal_title"): item for item in items}
     result = []

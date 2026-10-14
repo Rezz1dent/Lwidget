@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v36 • Manrope"
+TITLE = "Breezy Minimal v37 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -72,15 +72,23 @@ BOTTOM_ROWS = ("Today • Breezy high/low", "Row 3 • Tomorrow maximum/minimum"
 # Umbrella sized to the rows: icon ~ row text size, centered on the text.
 UMBRELLA_ICON_SIZE = 25.0
 UMBRELLA_ICON_Y = 4.0
-# Room for "70%"-"99%" at size 23 (Manrope Regular), right-aligned at the row's edge.
-PERCENT_WIDTH = 50.0
+# The percent is right-aligned at the row's edge; the icon follows its actual width.
+# Manrope Regular at size 23: a digit is ~13 wide, "%" ~21.
+DIGIT_WIDTH = 13
+PERCENT_SIGN_WIDTH = 21
+ICON_GAP = 3   # between the umbrella and the percent
+ROW_GAP = 8    # between "Tomorrow" and the umbrella
 # Tabular digits are 0.62 em wide: "HH" is 1.24 * size.
 MINUTES_X = CLOCK_X + round(1.24 * CLOCK_SIZE)
 
 # Tomorrow's precipitation arrives as "60%": keep the digits for the comparison.
 PRECIP = 'tc(reg, br(breezy, tomorrow_precip), "[^0-9]", "")'
 RAIN = "%s >= 70" % PRECIP
-UMBRELLA_WIDTH = 89  # percent + gap + icon + gap before "Tomorrow"
+
+
+def umbrella_icon_x(edge):
+    """Right offset of the umbrella icon: just left of the percent text."""
+    return "%d + tc(len, %s) * %d" % (edge + PERCENT_SIGN_WIDTH + ICON_GAP, PRECIP, DIGIT_WIDTH)
 
 
 def main(base, fonts_dir, target):
@@ -148,7 +156,8 @@ def main(base, fonts_dir, target):
             x = item.get("position_offset_x", 40.0)
             item.setdefault("internal_toggles", {})["position_offset_x"] = 10
             item.setdefault("internal_formulas", {})["position_offset_x"] = (
-                "$if(%s, %d, %d)$" % (RAIN, x + UMBRELLA_WIDTH, x))
+                "$if(%s, %s + %d, %d)$" % (
+                    RAIN, umbrella_icon_x(x), UMBRELLA_ICON_SIZE + ROW_GAP, x))
             umbrella_y = item.get("position_offset_y", 145.0)
             umbrella_x = x
         if item["internal_type"] == "FontIconModule":
@@ -179,11 +188,18 @@ def main(base, fonts_dir, target):
         "icon_size": UMBRELLA_ICON_SIZE,
         "paint_color": SECONDARY,
         "position_anchor": "TOPRIGHT",
-        "position_offset_x": umbrella_x + PERCENT_WIDTH + 4,
+        "position_offset_x": umbrella_x,
         "position_offset_y": umbrella_y + UMBRELLA_ICON_Y,
-        "internal_toggles": {"paint_color": 10},
-        "internal_formulas": {"paint_color": "$if(%s, \"%s\", \"#00FFFFFF\")$" % (RAIN, SECONDARY)},
     }, **shadow(UMBRELLA_ICON_SIZE, **UMBRELLA_SHADOW), **events))
+    # Hidden without rain: transparent icon and shadow; placed by the percent's width.
+    result[-1]["internal_toggles"] = {
+        "paint_color": 10, "fx_shadow_color": 10, "position_offset_x": 10}
+    result[-1]["internal_formulas"] = {
+        "paint_color": "$if(%s, \"%s\", \"#00FFFFFF\")$" % (RAIN, SECONDARY),
+        "fx_shadow_color": "$if(%s, \"%s\", \"#00000000\")$" % (
+            RAIN, result[-1]["fx_shadow_color"]),
+        "position_offset_x": "$%s$" % umbrella_icon_x(umbrella_x),
+    }
     for item in result:
         if item["internal_type"] != "ShapeModule":
             item["position_offset_y"] = item.get("position_offset_y", 0.0) - RAISE

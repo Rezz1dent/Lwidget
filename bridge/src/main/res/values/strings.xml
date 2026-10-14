@@ -3,13 +3,14 @@
     <string name="app_name">Breezy Bridge</string>
     <string name="intro_caption">Local weather transfer from Breezy Weather to KWGT.\nGrant access to Breezy weather data, then refresh the forecast.</string>
     <string name="grant_button">Allow access to Breezy Weather</string>
+    <string name="grant_done">Access to Breezy Weather granted</string>
     <string name="resend_button">Read Breezy data and send to KWGT</string>
     <string name="send_success">Weather sent to KWGT</string>
     <string name="send_failure">Unable to read weather — check Breezy permission and version</string>
     <string name="catalog_hint">Variable reference\nTap an entry to copy its KWGT formula. The most recent value appears below.</string>
     <string name="search_hint">Search variables or weather details</string>
     <string name="cache_empty">No weather data received yet</string>
-    <string name="cache_received">Data received • variables: %1$d</string>
+    <string name="cache_received">Data received %1$s • variables: %2$d</string>
     <string name="sample_empty">Last value: —</string>
     <string name="sample_current">Current: %1$s</string>
     <string name="copy_success">Copied: %1$s</string>

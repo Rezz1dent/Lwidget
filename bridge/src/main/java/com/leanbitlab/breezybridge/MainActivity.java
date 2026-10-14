@@ -4,12 +4,18 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.format.DateFormat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.TypedValue;
 import android.view.View;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -79,6 +85,7 @@ public final class MainActivity extends Activity {
     private LinearLayout entriesContainer;
     private EditText search;
     private TextView status;
+    private Button grant;
     private Map<String, String> latestValues = Collections.emptyMap();
 
     private int dp(float n) {
@@ -98,6 +105,7 @@ public final class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         ScrollView scroll = new ScrollView(this);
+        setupSystemBars(scroll);
         LinearLayout main = new LinearLayout(this);
         main.setOrientation(LinearLayout.VERTICAL);
         main.setPadding(dp(18), dp(20), dp(18), dp(32));
@@ -113,7 +121,7 @@ public final class MainActivity extends Activity {
         status = text("", 14, ACCENT);
         main.addView(status);
 
-        Button grant = new Button(this);
+        grant = new Button(this);
         grant.setText(R.string.grant_button);
         grant.setOnClickListener(v -> {
             String needed = ProviderBridge.permissionToRequest(this);
@@ -190,9 +198,43 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /**
+     * Android 15+ draws the activity behind the status and navigation bars:
+     * pad the content by their insets and use dark bar icons on the light background.
+     */
+    private void setupSystemBars(View content) {
+        int background;
+        TypedArray attrs = obtainStyledAttributes(new int[]{android.R.attr.colorBackground});
+        try {
+            background = attrs.getColor(0, Color.WHITE);
+        } finally {
+            attrs.recycle();
+        }
+        content.setBackgroundColor(background);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            getWindow().setStatusBarColor(background);
+            getWindow().setNavigationBarColor(background);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            int light = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS |
+                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+            getWindow().getDecorView().getWindowInsetsController()
+                .setSystemBarsAppearance(light, light);
+            content.setOnApplyWindowInsetsListener((v, insets) -> {
+                android.graphics.Insets bars = insets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+                return insets;
+            });
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
+        }
+    }
+
     private void loadLatest() {
-        String json = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE)
-            .getString(KwgtPublisher.CACHE_KEY, null);
+        SharedPreferences prefs = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE);
+        String json = prefs.getString(KwgtPublisher.CACHE_KEY, null);
         latestValues = Collections.emptyMap();
         if (json != null) {
             try {
@@ -201,10 +243,17 @@ public final class MainActivity extends Activity {
                 if (values != null) latestValues = values;
             } catch (Exception ignored) {}
         }
+        if (grant != null) {
+            boolean granted = ProviderBridge.isGranted(this);
+            grant.setEnabled(!granted);
+            grant.setText(granted ? R.string.grant_done : R.string.grant_button);
+        }
         if (status != null) {
+            long time = prefs.getLong(KwgtPublisher.CACHE_TIME_KEY, 0);
+            String when = time == 0 ? "" : DateFormat.getTimeFormat(this).format(new java.util.Date(time));
             String cache = latestValues.isEmpty()
                 ? getString(R.string.cache_empty)
-                : getString(R.string.cache_received, latestValues.size());
+                : getString(R.string.cache_received, when, latestValues.size()).replace("  ", " ");
             status.setText(ProviderBridge.status(this) + "\n" + cache);
         }
     }

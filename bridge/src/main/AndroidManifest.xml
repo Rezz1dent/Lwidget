@@ -8,8 +8,8 @@
     </queries>
     <application
         android:label="@string/app_name"
-        android:icon="@drawable/ic_breezy_bridge"
-        android:roundIcon="@drawable/ic_breezy_bridge"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:allowBackup="false"
         android:supportsRtl="true">

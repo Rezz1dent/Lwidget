@@ -20,6 +20,7 @@ public final class KwgtPublisher {
     private static final String TAG = "BreezyKwgt";
     static final String PREFS = "breezy_bridge";
     static final String CACHE_KEY = "last_json";
+    static final String CACHE_TIME_KEY = "last_time";
     static final String[] KEYS = {
         "temp", "feels", "condition", "code", "icon",
         "humidity", "precip", "wind", "wind_kmh", "wind_ms",

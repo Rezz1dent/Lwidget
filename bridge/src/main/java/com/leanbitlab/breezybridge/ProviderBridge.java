@@ -56,6 +56,10 @@ public final class ProviderBridge {
         return context.getString(R.string.status_not_found);
     }
 
+    public static boolean isGranted(Context context) {
+        return approvedPackage(context) != null;
+    }
+
     private static String approvedPackage(Context context) {
         for (String pkg : PACKAGES) {
             if (context.getPackageManager().resolveContentProvider(authority(pkg), 0) != null &&
@@ -122,7 +126,8 @@ public final class ProviderBridge {
 
                 String converted = legacy.toString();
                 context.getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE)
-                    .edit().putString(KwgtPublisher.CACHE_KEY, converted).apply();
+                    .edit().putString(KwgtPublisher.CACHE_KEY, converted)
+                    .putLong(KwgtPublisher.CACHE_TIME_KEY, System.currentTimeMillis()).apply();
                 return KwgtPublisher.publish(context, converted);
             }
         } catch (Exception e) {

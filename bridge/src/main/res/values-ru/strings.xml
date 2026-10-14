@@ -53,4 +53,11 @@
     <string name="var_tomorrow_icon">Завтрашняя погода — символ Emoji</string>
     <string name="var_tomorrow_icon_flat">Иконка погоды завтра: название в наборе Meteo</string>
     <string name="var_location">Название населённого пункта из Breezy</string>
+    <string name="label_icon_style">Стиль иконок погоды (icon_glyph)</string>
+    <string name="label_language">Язык</string>
+    <string name="style_filled">Заливка (Meteo)</string>
+    <string name="style_outline">Контурные (Meteo)</string>
+    <string name="style_breezy">Как в Breezy (Material Design Icons)</string>
+    <string name="var_icon_glyph">Иконка погоды в выбранном стиле (шрифт breezy_icons)</string>
+    <string name="var_tomorrow_icon_glyph">Иконка погоды завтра в выбранном стиле (шрифт breezy_icons)</string>
 </resources>

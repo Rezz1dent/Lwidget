@@ -5,6 +5,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.os.Build;
@@ -16,10 +17,13 @@ import android.util.TypedValue;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,6 +40,11 @@ public final class MainActivity extends Activity {
     private static final int MAIN = Color.rgb(35, 47, 65);
     private static final int MUTED = Color.rgb(94, 112, 131);
     private static final int ACCENT = Color.rgb(39, 105, 166);
+
+    /** Interface language of this screen, independent of the system language. */
+    private static final String LANGUAGE_KEY = "ui_language";
+    private static final String[] LANGUAGES = {"en", "ru"};
+    private static final String[] LANGUAGE_NAMES = {"English", "Русский"};
 
     private static final class Entry {
         final int groupRes, descriptionRes;
@@ -56,6 +65,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_now, "code", R.string.var_code),
         new Entry(R.string.group_now, "icon", R.string.var_icon),
         new Entry(R.string.group_now, "icon_flat", R.string.var_icon_flat),
+        new Entry(R.string.group_now, "icon_glyph", R.string.var_icon_glyph),
         new Entry(R.string.group_now, "is_day", R.string.var_is_day),
         new Entry(R.string.group_now, "humidity", R.string.var_humidity),
         new Entry(R.string.group_now, "precip", R.string.var_precip),
@@ -79,6 +89,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_tomorrow, "tomorrow_precip", R.string.var_tomorrow_precip),
         new Entry(R.string.group_tomorrow, "tomorrow_icon", R.string.var_tomorrow_icon),
         new Entry(R.string.group_tomorrow, "tomorrow_icon_flat", R.string.var_tomorrow_icon_flat),
+        new Entry(R.string.group_tomorrow, "tomorrow_icon_glyph", R.string.var_tomorrow_icon_glyph),
         new Entry(R.string.group_other, "location", R.string.var_location)
     };
 
@@ -99,6 +110,14 @@ public final class MainActivity extends Activity {
         t.setTextSize(sp);
         t.setTextColor(color);
         return t;
+    }
+
+    @Override protected void attachBaseContext(Context base) {
+        String language = base.getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE)
+            .getString(LANGUAGE_KEY, LANGUAGES[0]);
+        Configuration config = new Configuration(base.getResources().getConfiguration());
+        config.setLocale(Locale.forLanguageTag(language));
+        super.attachBaseContext(base.createConfigurationContext(config));
     }
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -151,6 +170,8 @@ public final class MainActivity extends Activity {
         });
         main.addView(resend);
 
+        addSettings(main);
+
         TextView hint = text(getString(R.string.catalog_hint), 14, MAIN);
         hint.setPadding(0, dp(16), 0, dp(10));
         main.addView(hint);
@@ -198,6 +219,65 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private void addSettings(LinearLayout main) {
+        SharedPreferences prefs = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE);
+
+        String[] styleNames = {
+            getString(R.string.style_filled),
+            getString(R.string.style_outline),
+            getString(R.string.style_breezy)
+        };
+        addChoice(main, R.string.label_icon_style, styleNames,
+            indexOf(KwgtPublisher.STYLES, KwgtPublisher.iconStyle(this)), index -> {
+                prefs.edit().putString(KwgtPublisher.STYLE_KEY, KwgtPublisher.STYLES[index]).apply();
+                new Thread(() -> {
+                    KwgtPublisher.resendCached(getApplicationContext());
+                    runOnUiThread(() -> { loadLatest(); drawList(); });
+                }, "breezy-kwgt-style").start();
+            });
+
+        addChoice(main, R.string.label_language, LANGUAGE_NAMES,
+            indexOf(LANGUAGES, prefs.getString(LANGUAGE_KEY, LANGUAGES[0])), index -> {
+                prefs.edit().putString(LANGUAGE_KEY, LANGUAGES[index]).apply();
+                recreate();
+            });
+    }
+
+    private interface OnChoice {
+        void chosen(int index);
+    }
+
+    /** Label + dropdown; the callback runs only when the user picks another value. */
+    private void addChoice(LinearLayout main, int labelRes, String[] names, int selected,
+                           OnChoice onChoice) {
+        TextView label = text(getString(labelRes), 14, MUTED);
+        label.setPadding(0, dp(14), 0, 0);
+        main.addView(label);
+        Spinner spinner = new Spinner(this);
+        ArrayAdapter<String> adapter =
+            new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, names);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setSelection(selected, false);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            private int current = selected;
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == current) return;
+                current = position;
+                onChoice.chosen(position);
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+        main.addView(spinner);
+    }
+
+    private static int indexOf(String[] values, String value) {
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].equals(value)) return i;
+        }
+        return 0;
+    }
+
     /**
      * Android 15+ draws the activity behind the status and navigation bars:
      * pad the content by their insets and use dark bar icons on the light background.
@@ -239,7 +319,8 @@ public final class MainActivity extends Activity {
         if (json != null) {
             try {
                 Map<String, String> values =
-                    KwgtPublisher.variables(new JSONObject(json), System.currentTimeMillis());
+                    KwgtPublisher.variables(new JSONObject(json), System.currentTimeMillis(),
+                        KwgtPublisher.iconStyle(this));
                 if (values != null) latestValues = values;
             } catch (Exception ignored) {}
         }

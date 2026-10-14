@@ -53,4 +53,11 @@
     <string name="var_tomorrow_icon">Tomorrow\'s weather emoji</string>
     <string name="var_tomorrow_icon_flat">Tomorrow\'s Meteo icon glyph name</string>
     <string name="var_location">Location name from Breezy</string>
+    <string name="label_icon_style">Weather icon style (icon_glyph)</string>
+    <string name="label_language">Language</string>
+    <string name="style_filled">Filled (Meteo)</string>
+    <string name="style_outline">Outline (Meteo)</string>
+    <string name="style_breezy">Breezy (Material Design Icons)</string>
+    <string name="var_icon_glyph">Weather icon in the chosen style (font breezy_icons)</string>
+    <string name="var_tomorrow_icon_glyph">Tomorrow\'s weather icon in the chosen style (font breezy_icons)</string>
 </resources>

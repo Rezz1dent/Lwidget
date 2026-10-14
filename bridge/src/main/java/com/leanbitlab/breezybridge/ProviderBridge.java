@@ -176,8 +176,12 @@ public final class ProviderBridge {
             }
             String description = current.optString("weatherText", "");
             if (!description.isEmpty()) result.put("currentCondition", description);
-            int code = legacyCode(current.optString("weatherCode", ""));
-            if (code != -1) result.put("currentConditionCode", code);
+            String weatherCode = current.optString("weatherCode", "");
+            int code = legacyCode(weatherCode);
+            if (code != -1) {
+                result.put("currentConditionCode", code);
+                result.put("currentWeatherCode", weatherCode);
+            }
             JSONObject humidity = current.optJSONObject("relativeHumidity");
             if (humidity != null && !Double.isNaN(value(humidity)))
                 result.put("currentHumidity", Math.round(value(humidity)));
@@ -232,8 +236,12 @@ public final class ProviderBridge {
             JSONObject halfDay = tomorrowDay.optJSONObject("day");
             if (halfDay == null) halfDay = tomorrowDay.optJSONObject("night");
             if (halfDay != null) {
-                int code = legacyCode(halfDay.optString("weatherCode", ""));
-                if (code >= 0) entry.put("conditionCode", code);
+                String weatherCode = halfDay.optString("weatherCode", "");
+                int code = legacyCode(weatherCode);
+                if (code >= 0) {
+                    entry.put("conditionCode", code);
+                    entry.put("weatherCode", weatherCode);
+                }
                 JSONObject chance = halfDay.optJSONObject("precipitationProbability");
                 JSONObject total = chance == null ? null : chance.optJSONObject("total");
                 if (total != null && !Double.isNaN(value(total))) {

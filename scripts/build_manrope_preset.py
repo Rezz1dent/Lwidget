@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v29 • Manrope"
+TITLE = "Breezy Minimal v30 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -26,7 +26,16 @@ FONTS = [HOURS_FONT, MINUTES_FONT, TEMP_FONT, ROW_FONT]
 
 WHITE = "#FFF9FBFF"
 SECONDARY = "#B8FFFFFF"  # ~72% white
-SHADOW = {"fx_shadow": "OUTER", "fx_shadow_blur": 20}
+# Light shadow. fx_shadow and fx_shadow_blur come from a KWGT export; the color and
+# distance keys follow the same naming. Blur 20 with the default color looked hard
+# on the home screen and shifted the text.
+SHADOW = {"fx_shadow": "OUTER", "fx_shadow_blur": 6, "fx_shadow_distance": 2,
+          "fx_shadow_color": "#40000000"}
+
+# Manrope's ascent is 0.138 em larger than the system font's: move the text up
+# by that much so it sits where the system font did (and the last row is not cut).
+ASCENT_SHIFT = 0.138
+DEFAULT_TEXT_SIZE = 20.0
 
 CLOCK_SIZE = 70.0
 CLOCK_X = 40.0
@@ -47,7 +56,8 @@ def main(base, fonts_dir, target):
     info["id"] = str(uuid.uuid4())
     info["ts"] = int(time.time() * 1000)
     info["description"] = (
-        "Flat, transparent, two-column widget in Manrope: bold hours, thin minutes, soft "
+        "Flat, transparent, two-column widget in Manrope (reboot the phone once after the "
+        "first import so the home screen loads the fonts): bold hours, thin minutes, soft "
         "shadow, dimmed secondary rows. Umbrella with tomorrow's precipitation next to "
         "Tomorrow only when it is 70% or more. Weather icon: Material Design Icons as in "
         "Breezy Weather (Iconify mdi), data from Breezy Bridge 1.4+.")
@@ -63,6 +73,9 @@ def main(base, fonts_dir, target):
             continue  # merged into the date row: Manrope is wider, the rows would overlap
         if item["internal_type"] == "TextModule":
             item.update(SHADOW)
+            size = item.get("text_size", DEFAULT_TEXT_SIZE)
+            item["position_offset_y"] = float(round(
+                item.get("position_offset_y", 0.0) - ASCENT_SHIFT * size))
             item["text_family"] = FONT % ROW_FONT
             item["paint_color"] = SECONDARY
         if title == "Clock • large":

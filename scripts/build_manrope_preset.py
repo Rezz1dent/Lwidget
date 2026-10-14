@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v31 • Manrope"
+TITLE = "Breezy Minimal v32 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -35,12 +35,22 @@ SHADOW_BLUR = 6
 SHADOW_DISTANCE = 6
 
 
-def shadow(size):
+def shadow(size, distance=None, blur=None):
     k = size / SHADOW_SIZE
-    return {"fx_shadow": "OUTER", "fx_shadow_blur": max(2, round(SHADOW_BLUR * k)),
+    return {"fx_shadow": "OUTER",
+            "fx_shadow_blur": blur if blur is not None else max(2, round(SHADOW_BLUR * k)),
             "fx_shadow_direction": 15,
-            "fx_shadow_distance": max(1, round(SHADOW_DISTANCE * k)),
+            "fx_shadow_distance": (distance if distance is not None
+                                   else max(1, round(SHADOW_DISTANCE * k))),
             "fx_shadow_color": "#68000000"}
+
+
+# Thin minutes: a full-size offset reads as a second copy of the digits.
+MINUTES_SHADOW = {"distance": 3, "blur": 4}
+# Iconify icons draw the shadow much farther than text with the same distance.
+ICON_SHADOW = {"distance": 1, "blur": 2}
+# Raise everything so the content is centered in the widget frame (v31 sat ~18 low).
+RAISE = 18.0
 
 
 # Manrope's ascent is 0.138 em larger than the system font's: move the text up
@@ -99,6 +109,7 @@ def main(base, fonts_dir, target):
             minutes["internal_title"] = "Clock • minutes"
             minutes["text_expression"] = '$df(":mm")$'
             minutes["text_family"] = FONT % MINUTES_FONT
+            minutes.update(shadow(CLOCK_SIZE, **MINUTES_SHADOW))
             minutes["position_offset_x"] = float(MINUTES_X)
             result += [item, minutes]
             continue
@@ -118,7 +129,7 @@ def main(base, fonts_dir, target):
             umbrella_y = item.get("position_offset_y", 145.0)
             umbrella_x = x
         if item["internal_type"] == "FontIconModule":
-            item.update(shadow(item.get("icon_size", 50.0)))
+            item.update(shadow(item.get("icon_size", 50.0), **ICON_SHADOW))
         result.append(item)
 
     row = by_title["Row 3 • Tomorrow maximum/minimum"]
@@ -138,7 +149,7 @@ def main(base, fonts_dir, target):
                   "icon_size": 22.0,
                   "paint_color": SECONDARY,
                   "position_anchor": "TOPLEFT",
-                  "position_offset_y": 3.0}, **shadow(22.0)),
+                  "position_offset_y": 3.0}, **shadow(22.0, **ICON_SHADOW)),
             dict({"internal_type": "TextModule",
                   "internal_title": "Umbrella percent",
                   "text_expression": "$%s + \"%%\"$" % PRECIP,
@@ -151,6 +162,9 @@ def main(base, fonts_dir, target):
     for key in ("internal_events",):
         if key in row:
             result[-1][key] = row[key]
+    for item in result:
+        if item["internal_type"] != "ShapeModule":
+            item["position_offset_y"] = item.get("position_offset_y", 0.0) - RAISE
     preset["preset_root"]["viewgroup_items"] = result
 
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:

@@ -20,7 +20,7 @@ import java.util.zip.GZIPInputStream;
 /**
  * Experimental Breezy Weather ContentProvider -> the existing KWGT variable contract.
  * Based on the published Breezy data-sharing sample/schema (provider API 0.x).
- * Does NOT depend on the Lwidget package ID or receive Gadgetbridge messages.
+ * Hourly data is requested only for its "isDaylight" flags (day/night icons).
  */
 public final class ProviderBridge {
     private static final String TAG = "BreezyProviderBridge";
@@ -100,7 +100,7 @@ public final class ProviderBridge {
                 .appendQueryParameter("temperatureUnit", "c")
                 .appendQueryParameter("speedUnit", "kph")
                 .appendQueryParameter("withDaily", "true")
-                .appendQueryParameter("withHourly", "false")
+                .appendQueryParameter("withHourly", "true")
                 .appendQueryParameter("withMinutely", "false")
                 .appendQueryParameter("withAlerts", "false")
                 .appendQueryParameter("withNormals", "false")
@@ -121,10 +121,9 @@ public final class ProviderBridge {
                 if (legacy == null) return false;
 
                 String converted = legacy.toString();
-                // Same cache format as the original bridge, to preserve the variable catalog.
-                context.getSharedPreferences("breezy_bridge", Context.MODE_PRIVATE)
-                    .edit().putString("last_json", converted).apply();
-                return WeatherReceiver.publish(context, converted);
+                context.getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE)
+                    .edit().putString(KwgtPublisher.CACHE_KEY, converted).apply();
+                return KwgtPublisher.publish(context, converted);
             }
         } catch (Exception e) {
             Log.e(TAG, "Provider read failed (permission, API, or data schema)", e);
@@ -145,7 +144,7 @@ public final class ProviderBridge {
             int size = 0;
             while ((n = in.read(buf)) != -1) {
                 size += n;
-                if (size > 2 * 1024 * 1024) throw new IllegalArgumentException("Weather JSON too large");
+                if (size > 8 * 1024 * 1024) throw new IllegalArgumentException("Weather JSON too large");
                 out.write(buf, 0, n);
             }
             return new JSONObject(out.toString("UTF-8"));
@@ -186,6 +185,9 @@ public final class ProviderBridge {
                 if (!Double.isNaN(bearing) && bearing >= 0) result.put("windDirection", Math.round(bearing));
             }
         }
+
+        JSONArray daylight = daylight(weather.optJSONArray("hourly"));
+        if (daylight != null) result.put("daylight", daylight);
 
         TimeZone zone = TimeZone.getTimeZone(timezone.isEmpty() ? "UTC" : timezone);
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -235,6 +237,26 @@ public final class ProviderBridge {
             }
             forecasts.put(entry);
             result.put("forecasts", forecasts);
+        }
+        return result;
+    }
+
+    /** [[hourStartMillis, 0|1], ...] from Breezy's hourly isDaylight, sorted by time. */
+    private static JSONArray daylight(JSONArray hourly) {
+        if (hourly == null) return null;
+        java.util.List<long[]> hours = new java.util.ArrayList<>();
+        for (int i = 0; i < hourly.length(); i++) {
+            JSONObject hour = hourly.optJSONObject(i);
+            if (hour == null || !hour.has("isDaylight") || hour.isNull("isDaylight")) continue;
+            long date = hour.optLong("date", -1);
+            if (date < 0) continue;
+            hours.add(new long[]{date, hour.optBoolean("isDaylight", true) ? 1 : 0});
+        }
+        if (hours.isEmpty()) return null;
+        hours.sort((a, b) -> Long.compare(a[0], b[0]));
+        JSONArray result = new JSONArray();
+        for (long[] hour : hours) {
+            result.put(new JSONArray().put(hour[0]).put((int) hour[1]));
         }
         return result;
     }

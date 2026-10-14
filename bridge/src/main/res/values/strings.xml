@@ -28,6 +28,7 @@
     <string name="var_code">Numeric weather condition code (OpenWeather-like)</string>
     <string name="var_icon">Weather emoji</string>
     <string name="var_icon_flat">Glyph name in the Meteo icon font</string>
+    <string name="var_is_day">1 by day, 0 at night (from Breezy hourly data)</string>
     <string name="var_humidity">Relative humidity, %</string>
     <string name="var_precip">Current precipitation probability, % (if available)</string>
     <string name="var_details">Combined text: feels-like, wind arrow, m/s, humidity</string>

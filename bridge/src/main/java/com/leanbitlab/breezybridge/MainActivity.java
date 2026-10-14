@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Hidden settings screen and searchable reference for all 30 KWGT variables.
+ * Hidden settings screen and searchable reference for all KWGT variables.
  * Tap any variable to copy $br(breezy, variable)$.
  */
 public final class MainActivity extends Activity {
@@ -41,7 +41,7 @@ public final class MainActivity extends Activity {
         }
     }
 
-    // Keep variable names in sync with WeatherReceiver.KEYS.
+    // Keep variable names in sync with KwgtPublisher.KEYS.
     private static final Entry[] CATALOG = {
         new Entry(R.string.group_now, "temp", R.string.var_temp),
         new Entry(R.string.group_now, "feels", R.string.var_feels),
@@ -50,6 +50,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_now, "code", R.string.var_code),
         new Entry(R.string.group_now, "icon", R.string.var_icon),
         new Entry(R.string.group_now, "icon_flat", R.string.var_icon_flat),
+        new Entry(R.string.group_now, "is_day", R.string.var_is_day),
         new Entry(R.string.group_now, "humidity", R.string.var_humidity),
         new Entry(R.string.group_now, "precip", R.string.var_precip),
         new Entry(R.string.group_now, "details", R.string.var_details),
@@ -190,12 +191,13 @@ public final class MainActivity extends Activity {
     }
 
     private void loadLatest() {
-        String json = getSharedPreferences("breezy_bridge", Context.MODE_PRIVATE)
-            .getString("last_json", null);
+        String json = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE)
+            .getString(KwgtPublisher.CACHE_KEY, null);
         latestValues = Collections.emptyMap();
         if (json != null) {
             try {
-                Map<String, String> values = WeatherReceiver.variables(new JSONObject(json));
+                Map<String, String> values =
+                    KwgtPublisher.variables(new JSONObject(json), System.currentTimeMillis());
                 if (values != null) latestValues = values;
             } catch (Exception ignored) {}
         }

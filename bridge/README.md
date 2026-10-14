@@ -17,7 +17,15 @@ Minimal Android bridge that sends weather from **Breezy Weather** to **KWGT**, w
 3. Tap **Allow access to Breezy Weather** and approve the permission.
 4. In Breezy Weather's **Widgets & live wallpapers** settings, configure its **Update Notifier** to send notifications to **Breezy Bridge**.
 5. Refresh Breezy Weather. Use **Read Breezy data and send to KWGT** for a manual test.
-6. In KWGT, use `$br(breezy, temp)$`, `$br(breezy, today_compact)$`, etc. The bridge exposes 30 variables, all searchable in its settings screen; tap any variable to copy its formula.
+6. In KWGT, use `$br(breezy, temp)$`, `$br(breezy, today_compact)$`, etc. The bridge exposes 31 variables, all searchable in its settings screen; tap any variable to copy its formula.
+
+### Day/night icons
+
+`icon_flat` and `icon` already switch to night variants (moon, moon behind a cloud) using Breezy's
+hourly `isDaylight` data, so the widget only needs `$br(breezy, icon_flat)$`. `is_day` is `1` by day
+and `0` at night. The bridge re-sends cached data at the next sunrise/sunset with an inexact alarm,
+so the icon switches even without a Breezy refresh (precision: Breezy's hourly steps, plus a few
+minutes of alarm delay). Use the preset `presets/Breezy_Minimal_v23__Meteo.kwgt`.
 
 ### Notes
 

@@ -1,7 +1,7 @@
 name: Breezy Bridge APK
 on:
   push:
-    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather, feature/kwgt-three-row-v7, feature/kwgt-meteo-v10, feature/breezy-content-provider-bridge, feature/breezy-bridge-v1]
+    branches: [feature/kwgt-responsive, feature/kwgt-bridge-hidden-weather, feature/kwgt-three-row-v7, feature/kwgt-meteo-v10, feature/breezy-content-provider-bridge, feature/breezy-bridge-v1, feature/breezy-bridge-v2]
     paths:
       - bridge/**
       - settings.gradle.kts
@@ -42,6 +42,6 @@ jobs:
           echo "Verified: Breezy Bridge, with icon, without launcher activity, provider and settings."
       - uses: actions/upload-artifact@v4
         with:
-          name: breezy-bridge-v1-debug
+          name: breezy-bridge-debug
           path: bridge/build/outputs/apk/debug/*.apk
           if-no-files-found: error

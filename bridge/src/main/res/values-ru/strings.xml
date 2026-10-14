@@ -28,6 +28,7 @@
     <string name="var_code">Числовой погодный код (OpenWeather-подобный)</string>
     <string name="var_icon">Погодный символ Emoji</string>
     <string name="var_icon_flat">Название векторной иконки в шрифте Meteo</string>
+    <string name="var_is_day">1 днём, 0 ночью (по почасовым данным Breezy)</string>
     <string name="var_humidity">Относительная влажность, %</string>
     <string name="var_precip">Вероятность осадков сейчас, % (если доступно)</string>
     <string name="var_details">Общая строка: Like, стрелка ветра, м/с и влажность</string>

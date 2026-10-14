@@ -29,5 +29,8 @@
                 <action android:name="org.breezyweather.debug.ACTION_UPDATE_NOTIFIER"/>
             </intent-filter>
         </receiver>
+        <receiver
+            android:name="com.leanbitlab.breezybridge.DaylightScheduler"
+            android:exported="false" />
     </application>
 </manifest>

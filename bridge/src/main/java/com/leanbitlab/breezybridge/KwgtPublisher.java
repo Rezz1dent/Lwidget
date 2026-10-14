@@ -1,6 +1,5 @@
 package com.leanbitlab.breezybridge;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
@@ -12,16 +11,15 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Tiny, permission-free Breezy Gadgetbridge -> KWGT bridge.
- * Breezy serializes temperatures in Kelvin, wind speed in km/h,
- * and "forecasts"[0] is tomorrow (today is omitted by Breezy).
+ * Converts the cached weather snapshot into KWGT variables and sends them to KWGT.
+ * The snapshot uses the legacy Gadgetbridge layout produced by ProviderBridge:
+ * temperatures in Kelvin, wind speed in km/h, "forecasts"[0] is tomorrow.
  */
-public final class WeatherReceiver extends BroadcastReceiver {
-    public static final String ACTION_BREEZY =
-        "nodomain.freeyourgadget.gadgetbridge.ACTION_GENERIC_WEATHER";
+public final class KwgtPublisher {
     public static final String EXT = "breezy";
     private static final String TAG = "BreezyKwgt";
-    private static final String PREFS = "breezy_bridge";
+    static final String PREFS = "breezy_bridge";
+    static final String CACHE_KEY = "last_json";
     static final String[] KEYS = {
         "temp", "feels", "condition", "code", "icon",
         "humidity", "precip", "wind", "wind_kmh", "wind_ms",
@@ -30,30 +28,23 @@ public final class WeatherReceiver extends BroadcastReceiver {
         "tomorrow_precip", "tomorrow_icon",
         "like", "details", "wind_arrow", "today_max", "today_min",
         "today_range", "today_compact", "tomorrow_compact",
-        "icon_flat", "tomorrow_icon_flat"
+        "icon_flat", "tomorrow_icon_flat", "is_day"
     };
 
-    @Override public void onReceive(Context context, Intent intent) {
-        if (!ACTION_BREEZY.equals(intent.getAction())) return;
-        String json = intent.getStringExtra("WeatherJson");
-        if (json == null || json.isEmpty()) {
-            Log.w(TAG, "Received weather broadcast without WeatherJson");
-            return;
-        }
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().putString("last_json", json).apply();
-        publish(context, json);
-    }
+    private KwgtPublisher() {}
 
+    /** Re-sends the cached snapshot, e.g. when day turns into night. */
     public static boolean resendCached(Context context) {
         String json = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString("last_json", null);
+            .getString(CACHE_KEY, null);
         return json != null && publish(context, json);
     }
 
     public static boolean publish(Context context, String json) {
         try {
-            Map<String, String> vars = variables(new JSONObject(json));
+            JSONObject data = new JSONObject(json);
+            long now = System.currentTimeMillis();
+            Map<String, String> vars = variables(data, now);
             if (vars == null) return false;
 
             Intent kwgt = new Intent("org.kustom.action.SEND_VAR");
@@ -65,6 +56,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
                 vars.values().toArray(new String[0]));
             context.sendBroadcast(kwgt);
             Log.i(TAG, "Sent " + vars.size() + " Breezy variables to KWGT");
+            DaylightScheduler.scheduleNextSwitch(context, data, now);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Unable to forward Breezy weather", e);
@@ -76,7 +68,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
      * Always send empty values for missing optional fields. Otherwise KWGT
      * may keep yesterday's values when a provider temporarily omits a forecast.
      */
-    static Map<String, String> variables(JSONObject data) {
+    static Map<String, String> variables(JSONObject data, long nowMillis) {
         if (data == null ||
             (!has(data, "currentTemp") && !has(data, "currentCondition") &&
              !has(data, "forecasts"))) {
@@ -94,11 +86,13 @@ public final class WeatherReceiver extends BroadcastReceiver {
             vars.put("like", degreesC(data.optDouble("feelsLikeTemp")));
         if (has(data, "currentCondition"))
             vars.put("condition", data.optString("currentCondition").trim());
+        boolean day = isDaylight(data, nowMillis);
+        vars.put("is_day", day ? "1" : "0");
         if (has(data, "currentConditionCode")) {
             int code = data.optInt("currentConditionCode");
             vars.put("code", Integer.toString(code));
-            vars.put("icon", weatherIcon(code));
-            vars.put("icon_flat", weatherFlatIcon(code));
+            vars.put("icon", weatherIcon(code, day));
+            vars.put("icon_flat", weatherFlatIcon(code, day));
         }
         if (has(data, "currentHumidity"))
             vars.put("humidity", data.optString("currentHumidity") + "%");
@@ -149,8 +143,7 @@ public final class WeatherReceiver extends BroadcastReceiver {
         if (has(data, "location"))
             vars.put("location", data.optString("location"));
 
-        // Breezy's Gadgetbridge getDailyForecasts(...) explicitly skips today.
-        // The first element is TOMORROW, and max/min are supplied in Kelvin.
+        // ProviderBridge stores only tomorrow here; max/min are in Kelvin.
         JSONArray forecasts = data.optJSONArray("forecasts");
         if (forecasts != null && forecasts.length() > 0) {
             JSONObject tomorrow = forecasts.optJSONObject(0);
@@ -174,8 +167,8 @@ public final class WeatherReceiver extends BroadcastReceiver {
                 if (!compactRange.isEmpty())
                     vars.put("tomorrow_compact", "Tomorrow: " + compactRange);
                 if (has(tomorrow, "conditionCode")) {
-                    vars.put("tomorrow_icon", weatherIcon(tomorrow.optInt("conditionCode")));
-                    vars.put("tomorrow_icon_flat", weatherFlatIcon(tomorrow.optInt("conditionCode")));
+                    vars.put("tomorrow_icon", weatherIcon(tomorrow.optInt("conditionCode"), true));
+                    vars.put("tomorrow_icon_flat", weatherFlatIcon(tomorrow.optInt("conditionCode"), true));
                 }
             }
         }
@@ -228,33 +221,64 @@ public final class WeatherReceiver extends BroadcastReceiver {
     }
 
     /**
-     * KWGT includes the Meteo icon font. The names are from its built-in
-     * font map; in particular Rainy3 and Rainy4 depict clouds with rain,
-     * not the old 'grain' dots from Material icons.
+     * Breezy's hourly "isDaylight" flags, stored by ProviderBridge as
+     * "daylight": [[hourStartMillis, 0|1], ...] sorted by time.
+     * Without data (old cache, provider without hourly) it is treated as day.
      */
-    private static String weatherFlatIcon(int code) {
-        if (code == 800) return "Sun3";
-        if (code == 801 || code == 802) return "Cloudy3";
-        if (code == 803) return "Cloud3";
-        if (code == 804) return "Cloud5";
-        if (code >= 200 && code <= 232) return "Lightning5";
-        if (code >= 300 && code <= 321) return "Rainy3";
-        if (code >= 500 && code <= 531) return "Rainy4";
-        if (code >= 600 && code <= 622) return "Snowy4";
-        if (code >= 701 && code <= 781) return code == 771 ? "Windy" : "Fog";
-        return "Cloud5";
+    static boolean isDaylight(JSONObject data, long nowMillis) {
+        JSONArray hours = data.optJSONArray("daylight");
+        if (hours == null) return true;
+        Boolean state = null;
+        for (int i = 0; i < hours.length(); i++) {
+            JSONArray hour = hours.optJSONArray(i);
+            if (hour == null) continue;
+            if (hour.optLong(0, Long.MAX_VALUE) > nowMillis) break;
+            state = hour.optInt(1, 1) == 1;
+        }
+        return state == null || state;
     }
 
-    private static String weatherIcon(int code) {
-        if (code == 800) return "☀️";
-        if (code == 801) return "🌤️";
-        if (code == 802) return "⛅";
+    /** Start of the next hour whose daylight flag differs from now, or -1. */
+    static long nextDaylightSwitch(JSONObject data, long nowMillis) {
+        JSONArray hours = data.optJSONArray("daylight");
+        if (hours == null) return -1;
+        boolean current = isDaylight(data, nowMillis);
+        for (int i = 0; i < hours.length(); i++) {
+            JSONArray hour = hours.optJSONArray(i);
+            if (hour == null) continue;
+            long start = hour.optLong(0, -1);
+            if (start > nowMillis && (hour.optInt(1, 1) == 1) != current) return start;
+        }
+        return -1;
+    }
+
+    /**
+     * Glyph names from the Meteo icon font bundled with the preset (meteo.json).
+     * Night: clear -> moon2, partly cloudy -> cloud4 (moon behind a cloud);
+     * the other conditions have no day/night variants in the font.
+     * Note: cloud3 in this font is a thundercloud, so it is not used for clouds.
+     */
+    static String weatherFlatIcon(int code, boolean day) {
+        if (code == 800) return day ? "sun3" : "moon2";
+        if (code == 801 || code == 802) return day ? "cloudy3" : "cloud4";
+        if (code == 803 || code == 804) return "cloud5";
+        if (code >= 200 && code <= 232) return "lightning5";
+        if (code >= 300 && code <= 321) return "rainy3";
+        if (code >= 500 && code <= 531) return "rainy4";
+        if (code >= 600 && code <= 622) return "snowy4";
+        if (code >= 701 && code <= 781) return code == 771 ? "windy" : "fog";
+        return "cloud5";
+    }
+
+    static String weatherIcon(int code, boolean day) {
+        if (code == 800) return day ? "☀️" : "🌙";
+        if (code == 801) return day ? "🌤️" : "☁️";
+        if (code == 802) return day ? "⛅" : "☁️";
         if (code == 803 || code == 804) return "☁️";
         if (code >= 200 && code <= 232) return "⛈️";
         if (code >= 300 && code <= 531) return "🌧️";
         if (code >= 600 && code <= 622) return "🌨️";
-        if (code == 741 || code == 751) return "🌫️";
-        if (code == 771) return "💨";
+        if (code >= 701 && code <= 781) return code == 771 ? "💨" : "🌫️";
         return "☁️";
     }
 }

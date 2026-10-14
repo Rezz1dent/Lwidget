@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v30 • Manrope"
+TITLE = "Breezy Minimal v31 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -26,11 +26,22 @@ FONTS = [HOURS_FONT, MINUTES_FONT, TEMP_FONT, ROW_FONT]
 
 WHITE = "#FFF9FBFF"
 SECONDARY = "#B8FFFFFF"  # ~72% white
-# Light shadow. fx_shadow and fx_shadow_blur come from a KWGT export; the color and
-# distance keys follow the same naming. Blur 20 with the default color looked hard
-# on the home screen and shifted the text.
-SHADOW = {"fx_shadow": "OUTER", "fx_shadow_blur": 6, "fx_shadow_distance": 2,
-          "fx_shadow_color": "#40000000"}
+# Shadow tuned by hand on the 70-size clock in the KWGT editor (exported preset):
+# 41% black, distance 6, direction 15, blur 6. Smaller elements get the distance and
+# blur scaled to their size. Keep the blur small: KWGT grows the element's frame by
+# the blur, which pushes the text down.
+SHADOW_SIZE = 70.0
+SHADOW_BLUR = 6
+SHADOW_DISTANCE = 6
+
+
+def shadow(size):
+    k = size / SHADOW_SIZE
+    return {"fx_shadow": "OUTER", "fx_shadow_blur": max(2, round(SHADOW_BLUR * k)),
+            "fx_shadow_direction": 15,
+            "fx_shadow_distance": max(1, round(SHADOW_DISTANCE * k)),
+            "fx_shadow_color": "#68000000"}
+
 
 # Manrope's ascent is 0.138 em larger than the system font's: move the text up
 # by that much so it sits where the system font did (and the last row is not cut).
@@ -72,8 +83,8 @@ def main(base, fonts_dir, target):
         if title == "Next alarm • next to date":
             continue  # merged into the date row: Manrope is wider, the rows would overlap
         if item["internal_type"] == "TextModule":
-            item.update(SHADOW)
             size = item.get("text_size", DEFAULT_TEXT_SIZE)
+            item.update(shadow(size))
             item["position_offset_y"] = float(round(
                 item.get("position_offset_y", 0.0) - ASCENT_SHIFT * size))
             item["text_family"] = FONT % ROW_FONT
@@ -107,7 +118,7 @@ def main(base, fonts_dir, target):
             umbrella_y = item.get("position_offset_y", 145.0)
             umbrella_x = x
         if item["internal_type"] == "FontIconModule":
-            item.update(SHADOW)
+            item.update(shadow(item.get("icon_size", 50.0)))
         result.append(item)
 
     row = by_title["Row 3 • Tomorrow maximum/minimum"]
@@ -127,14 +138,14 @@ def main(base, fonts_dir, target):
                   "icon_size": 22.0,
                   "paint_color": SECONDARY,
                   "position_anchor": "TOPLEFT",
-                  "position_offset_y": 3.0}, **SHADOW),
+                  "position_offset_y": 3.0}, **shadow(22.0)),
             dict({"internal_type": "TextModule",
                   "internal_title": "Umbrella percent",
                   "text_expression": "$%s + \"%%\"$" % PRECIP,
                   "text_family": FONT % ROW_FONT,
                   "paint_color": SECONDARY,
                   "position_anchor": "TOPLEFT",
-                  "position_offset_x": 26.0}, **SHADOW),
+                  "position_offset_x": 26.0}, **shadow(DEFAULT_TEXT_SIZE)),
         ],
     })
     for key in ("internal_events",):

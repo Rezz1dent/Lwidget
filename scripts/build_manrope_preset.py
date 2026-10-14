@@ -16,7 +16,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v32 • Manrope"
+TITLE = "Breezy Minimal v33 • Manrope"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 HOURS_FONT = "Manrope-ExtraBold-Tnum"
 MINUTES_FONT = "Manrope-ExtraLight-Tnum"
@@ -26,29 +26,26 @@ FONTS = [HOURS_FONT, MINUTES_FONT, TEMP_FONT, ROW_FONT]
 
 WHITE = "#FFF9FBFF"
 SECONDARY = "#B8FFFFFF"  # ~72% white
-# Shadow tuned by hand on the 70-size clock in the KWGT editor (exported preset):
-# 41% black, distance 6, direction 15, blur 6. Smaller elements get the distance and
-# blur scaled to their size. Keep the blur small: KWGT grows the element's frame by
-# the blur, which pushes the text down.
+# Minimal shadow, tuned by hand in the KWGT editor (exported test preset):
+# 41% black, distance 1, direction 15; blur 6 on the 70-size texts, 2 on the rows.
+# Keep the blur small: KWGT grows the element's frame by the blur, which pushes the
+# text down.
 SHADOW_SIZE = 70.0
 SHADOW_BLUR = 6
-SHADOW_DISTANCE = 6
 
 
-def shadow(size, distance=None, blur=None):
+def shadow(size, distance=1, blur=None, direction=15):
     k = size / SHADOW_SIZE
     return {"fx_shadow": "OUTER",
-            "fx_shadow_blur": blur if blur is not None else max(2, round(SHADOW_BLUR * k)),
-            "fx_shadow_direction": 15,
-            "fx_shadow_distance": (distance if distance is not None
-                                   else max(1, round(SHADOW_DISTANCE * k))),
+            "fx_shadow_blur": blur if blur is not None else max(2, round(SHADOW_BLUR * min(k, 1))),
+            "fx_shadow_direction": direction,
+            "fx_shadow_distance": distance,
             "fx_shadow_color": "#68000000"}
 
 
-# Thin minutes: a full-size offset reads as a second copy of the digits.
-MINUTES_SHADOW = {"distance": 3, "blur": 4}
-# Iconify icons draw the shadow much farther than text with the same distance.
-ICON_SHADOW = {"distance": 1, "blur": 2}
+MINUTES_SHADOW = {}
+ICON_SHADOW = {"blur": 10, "direction": 0}
+UMBRELLA_SHADOW = {"blur": 2}
 # Raise everything so the content is centered in the widget frame (v31 sat ~18 low).
 RAISE = 18.0
 
@@ -58,8 +55,13 @@ RAISE = 18.0
 ASCENT_SHIFT = 0.138
 DEFAULT_TEXT_SIZE = 20.0
 
-CLOCK_SIZE = 70.0
+# Clock and current temperature: a bit larger than the original 70.
+CLOCK_SIZE = 78.0
 CLOCK_X = 40.0
+# Middle rows (date, wind) moved down so they sit closer to the bottom rows.
+MIDDLE_ROW_DOWN = 8.0
+BIG_TEXTS = ("Clock • large", "Row 1 • Breezy temperature")
+MIDDLE_ROWS = ("Date • next to alarm", "Row 2 • Like / arrow wind / humidity")
 # Tabular digits are 0.62 em wide: "HH" is 1.24 * size.
 MINUTES_X = CLOCK_X + round(1.24 * CLOCK_SIZE)
 
@@ -92,6 +94,10 @@ def main(base, fonts_dir, target):
             continue  # replaced by the shadow
         if title == "Next alarm • next to date":
             continue  # merged into the date row: Manrope is wider, the rows would overlap
+        if title in BIG_TEXTS:
+            item["text_size"] = CLOCK_SIZE
+        if title in MIDDLE_ROWS:
+            item["position_offset_y"] = item.get("position_offset_y", 0.0) + MIDDLE_ROW_DOWN
         if item["internal_type"] == "TextModule":
             size = item.get("text_size", DEFAULT_TEXT_SIZE)
             item.update(shadow(size))
@@ -117,7 +123,7 @@ def main(base, fonts_dir, target):
             item["internal_title"] = "Date + next alarm"
             alarm = by_title["Next alarm • next to date"]["text_expression"].strip()
             item["text_expression"] = (
-                item["text_expression"][:-1] + ' + "   " + ' + alarm[1:])
+                item["text_expression"][:-1] + ' + " " + ' + alarm[1:])
         if title == "Row 1 • Breezy temperature":
             item["text_family"] = FONT % TEMP_FONT
             item["paint_color"] = WHITE
@@ -149,7 +155,7 @@ def main(base, fonts_dir, target):
                   "icon_size": 22.0,
                   "paint_color": SECONDARY,
                   "position_anchor": "TOPLEFT",
-                  "position_offset_y": 3.0}, **shadow(22.0, **ICON_SHADOW)),
+                  }, **shadow(22.0, **UMBRELLA_SHADOW)),
             dict({"internal_type": "TextModule",
                   "internal_title": "Umbrella percent",
                   "text_expression": "$%s + \"%%\"$" % PRECIP,

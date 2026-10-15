@@ -62,7 +62,8 @@ widget it was saved from; `preset_root` is the `RootLayerModule`.
 Shadow: `fx_shadow: "OUTER"`, `fx_shadow_blur`, `fx_shadow_distance`, `fx_shadow_direction`,
 `fx_shadow_color`.
 No **letter spacing** key seen yet; the forum says Text has none and "Morphing Text" has character
-spacing. To be checked before relying on it.
+spacing. Workaround used in v51: our own font with empty **spacer glyphs** of exact width
+(`Manrope-Light-Spaced.ttf`, U+E100+k = k·0.002 em) placed between the letters.
 
 ### Shapes, icons, bitmaps
 

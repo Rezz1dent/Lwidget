@@ -22,7 +22,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v55 • Manrope"
+TITLE = "Breezy Minimal v56 • Manrope"
 MDI = "iconify://mdi?name=Material%20Design%20Icons"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
@@ -30,7 +30,7 @@ FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold"
 ROW_ICON = 22.0
 
 DATE = '$tc(cap, df("EEEE")) + df(", d MMMM")$'
-DATE_SIZE = '$if(tc(len, df("EEEE, d MMMM")) > 20, 20, 23)$'
+DATE_SIZE = '$if(gv(maximal) = 1 | tc(len, df("EEEE, d MMMM")) > 20, 20, 23)$'
 ALARM = ('$if(si(alarmon)=1, "◷ " + df("HH:mm", si(alarmd)) + " (" + df("EEE", si(alarmd))'
          ' + ")", "◷ —")$')
 SUN_ICON = '$if(ai(isday) = 1, "weather-sunset-down", "weather-sunset-up")$'
@@ -40,9 +40,34 @@ TOMORROW = '$tc(reg, br(breezy, tomorrow_compact), "Tomorrow: ", "")$'
 # Tomorrow's precipitation as digits in the local variable p ("" when Breezy has none).
 PRECIP = 'lv(p, tc(reg, br(breezy, tomorrow_precip), "[^0-9]", ""))'
 UMBRELLA_VISIBLE = (
-    '$%s + if(gv(umbrella_test) = 1 | (#p != "" & #p >= if(gv(umbrella_min) > 0, '
+    '$%s + if(gv(umbrella_test) = 1 | gv(maximal) = 1 | (#p != "" & #p >= if(gv(umbrella_min) > 0, '
     'gv(umbrella_min), 70)), ALWAYS, REMOVE)$' % PRECIP)
 UMBRELLA_PERCENT = '$%s + if(#p = "", 0, #p) + "%%"$' % PRECIP
+
+# Global switch "maximal": every row shows its longest realistic value, to check that
+# nothing overlaps (winter temperatures, longest weekday and month, umbrella at 100%).
+MAXIMAL = {"index": 3, "type": "SWITCH", "title": "Maximal: longest values everywhere (test)"}
+LONGEST = {
+    "Date": "Воскресенье, 28 сентября",
+    "Next alarm": "◷ 20:08 (пн)",
+    "Sun time": "22:58",
+    "Today range": "−35/−42°",
+    "Tomorrow range": "−35/−42°",
+    "Umbrella percent": "100%",
+    "Row 1 • Breezy temperature": "−35°",
+    "Row 2 • Like / arrow wind / humidity": "↖ 12,5 м/с like −42°",
+}
+
+
+def maximal(item):
+    """Wrap the text formula: the longest value while the "maximal" switch is on."""
+    title = item.get("internal_title")
+    if item.get("internal_type") == "TextModule" and title in LONGEST:
+        expression = item["text_expression"]
+        inner = expression[1:-1] if expression.startswith("$") else '"%s"' % expression
+        item["text_expression"] = '$if(gv(maximal) = 1, "%s", %s)$' % (LONGEST[title], inner)
+    for child in item.get("viewgroup_items", []):
+        maximal(child)
 
 
 def strip(item, *prefixes):
@@ -134,6 +159,9 @@ def main(base, fonts_dir, target):
             result.append(alarm_sun)
         if item is style:
             result.append(tomorrow)
+    for item in result:
+        maximal(item)
+    preset["preset_root"]["globals_list"]["maximal"] = MAXIMAL
     preset["preset_root"]["viewgroup_items"] = result
 
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:

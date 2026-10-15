@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="org.breezyweather.READ_PROVIDER" />
     <uses-permission android:name="org.breezyweather.debug.READ_PROVIDER" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <queries>
         <provider android:authorities="org.breezyweather.provider.weather" />
         <provider android:authorities="org.breezyweather.debug.provider.weather" />
@@ -27,6 +28,14 @@
             <intent-filter>
                 <action android:name="org.breezyweather.ACTION_UPDATE_NOTIFIER"/>
                 <action android:name="org.breezyweather.debug.ACTION_UPDATE_NOTIFIER"/>
+            </intent-filter>
+        </receiver>
+        <receiver
+            android:name="com.leanbitlab.breezybridge.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
             </intent-filter>
         </receiver>
         <receiver

@@ -45,9 +45,19 @@ the widget shows "?"), so the bridge relies on icon sets built into KWGT.
 - Weather icons: [Material Design Icons](https://pictogrammers.com/library/mdi/) by Pictogrammers,
   Apache License 2.0, provided by KWGT through Iconify. The bridge only sends icon names.
 
+### Breezy does not list the bridge
+
+Breezy Weather does not declare its own `ACTION_UPDATE_NOTIFIER` in its manifest `<queries>`,
+so on Android 11+ it only sees the bridge after the bridge has read its content provider. That
+visibility is lost after a reboot or a bridge update; Breezy then shows "no compatible packages"
+and removes the bridge from its Update Notifier setting. Since 1.5 the bridge reads the provider on
+boot and after its own update. If Breezy still does not list it: open the bridge, tap
+**Read Breezy data and send to KWGT**, close Breezy completely, reopen its settings and enable the
+bridge again.
+
 ### Notes
 
 - The app deliberately has **no launcher icon**. Its icon still appears in Android's app settings and on its APK.
-- English is the default interface language; Russian is supported.
+- English is the default interface language; Russian is supported (switch in the top-right corner).
 - The provider API is experimental (major version 0); a future Breezy release may require an adapter update.
 - Data comes from whichever forecast service Breezy Weather itself uses. This bridge does **not** support other weather apps directly.

@@ -8,22 +8,22 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Spinner;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -130,9 +130,14 @@ public final class MainActivity extends Activity {
         main.setPadding(dp(18), dp(20), dp(18), dp(32));
         scroll.addView(main);
 
+        LinearLayout header = new LinearLayout(this);
+        header.setOrientation(LinearLayout.HORIZONTAL);
+        header.setGravity(Gravity.CENTER_VERTICAL);
         TextView title = text(getString(R.string.app_name), 23, MAIN);
         title.setTypeface(null, android.graphics.Typeface.BOLD);
-        main.addView(title);
+        header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        header.addView(languageButton());
+        main.addView(header);
         TextView caption = text(getString(R.string.intro_caption), 14, MUTED);
         caption.setPadding(0, dp(6), 0, dp(12));
         main.addView(caption);
@@ -169,8 +174,6 @@ public final class MainActivity extends Activity {
             }, "breezy-kwgt-manual").start();
         });
         main.addView(resend);
-
-        addSettings(main);
 
         TextView hint = text(getString(R.string.catalog_hint), 14, MAIN);
         hint.setPadding(0, dp(16), 0, dp(10));
@@ -219,49 +222,34 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private void addSettings(LinearLayout main) {
+    /** Small "EN" / "RU" box in the top-right corner; tapping it opens the language list. */
+    private TextView languageButton() {
         SharedPreferences prefs = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE);
-
-        addChoice(main, R.string.label_language, LANGUAGE_NAMES,
-            indexOf(LANGUAGES, prefs.getString(LANGUAGE_KEY, LANGUAGES[0])), index -> {
-                prefs.edit().putString(LANGUAGE_KEY, LANGUAGES[index]).apply();
-                recreate();
-            });
-    }
-
-    private interface OnChoice {
-        void chosen(int index);
-    }
-
-    /** Label + dropdown; the callback runs only when the user picks another value. */
-    private void addChoice(LinearLayout main, int labelRes, String[] names, int selected,
-                           OnChoice onChoice) {
-        TextView label = text(getString(labelRes), 14, MUTED);
-        label.setPadding(0, dp(14), 0, 0);
-        main.addView(label);
-        Spinner spinner = new Spinner(this);
-        ArrayAdapter<String> adapter =
-            new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, names);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
-        spinner.setSelection(selected, false);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            private int current = selected;
-            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position == current) return;
-                current = position;
-                onChoice.chosen(position);
+        String current = prefs.getString(LANGUAGE_KEY, LANGUAGES[0]);
+        TextView button = text(current.toUpperCase(Locale.ROOT) + " ▾", 13, ACCENT);
+        button.setTypeface(null, android.graphics.Typeface.BOLD);
+        button.setPadding(dp(10), dp(4), dp(8), dp(4));
+        GradientDrawable border = new GradientDrawable();
+        border.setCornerRadius(dp(6));
+        border.setStroke(dp(1), ACCENT);
+        button.setBackground(border);
+        button.setOnClickListener(v -> {
+            PopupMenu menu = new PopupMenu(this, button);
+            for (int i = 0; i < LANGUAGES.length; i++) {
+                menu.getMenu().add(0, i, i,
+                    LANGUAGES[i].toUpperCase(Locale.ROOT) + "  " + LANGUAGE_NAMES[i]);
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) {}
+            menu.setOnMenuItemClickListener(item -> {
+                String chosen = LANGUAGES[item.getItemId()];
+                if (!chosen.equals(current)) {
+                    prefs.edit().putString(LANGUAGE_KEY, chosen).apply();
+                    recreate();
+                }
+                return true;
+            });
+            menu.show();
         });
-        main.addView(spinner);
-    }
-
-    private static int indexOf(String[] values, String value) {
-        for (int i = 0; i < values.length; i++) {
-            if (values[i].equals(value)) return i;
-        }
-        return 0;
+        return button;
     }
 
     /**

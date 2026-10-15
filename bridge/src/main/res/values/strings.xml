@@ -53,7 +53,6 @@
     <string name="var_tomorrow_icon">Tomorrow\'s weather emoji</string>
     <string name="var_tomorrow_icon_flat">Tomorrow\'s Meteo icon glyph name</string>
     <string name="var_location">Location name from Breezy</string>
-    <string name="label_language">Language</string>
     <string name="var_icon_mdi">Material Design Icons name, as in Breezy widgets (KWGT icon set: Iconify → mdi)</string>
     <string name="var_tomorrow_icon_mdi">Tomorrow\'s Material Design Icons name (Iconify → mdi)</string>
 </resources>

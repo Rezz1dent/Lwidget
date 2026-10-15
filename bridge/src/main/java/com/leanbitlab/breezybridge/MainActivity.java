@@ -69,6 +69,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_now, "is_day", R.string.var_is_day),
         new Entry(R.string.group_now, "humidity", R.string.var_humidity),
         new Entry(R.string.group_now, "precip", R.string.var_precip),
+        new Entry(R.string.group_now, "precip_now", R.string.var_precip_now),
         new Entry(R.string.group_now, "details", R.string.var_details),
         new Entry(R.string.group_wind, "wind", R.string.var_wind),
         new Entry(R.string.group_wind, "wind_kmh", R.string.var_wind_kmh),
@@ -175,6 +176,11 @@ public final class MainActivity extends Activity {
         });
         main.addView(resend);
 
+        Button battery = new Button(this);
+        battery.setText(R.string.battery_button);
+        battery.setOnClickListener(v -> openBatterySettings());
+        main.addView(battery);
+
         TextView hint = text(getString(R.string.catalog_hint), 14, MAIN);
         hint.setPadding(0, dp(16), 0, dp(10));
         main.addView(hint);
@@ -222,16 +228,28 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /** System list of apps with battery optimization; app info as a fallback. */
+    private void openBatterySettings() {
+        try {
+            startActivity(new android.content.Intent(
+                android.provider.Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (android.content.ActivityNotFoundException e) {
+            startActivity(new android.content.Intent(
+                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:" + getPackageName())));
+        }
+    }
+
     /** Small "EN" / "RU" box in the top-right corner; tapping it opens the language list. */
     private TextView languageButton() {
         SharedPreferences prefs = getSharedPreferences(KwgtPublisher.PREFS, Context.MODE_PRIVATE);
         String current = prefs.getString(LANGUAGE_KEY, LANGUAGES[0]);
-        TextView button = text(current.toUpperCase(Locale.ROOT) + " ▾", 13, ACCENT);
+        TextView button = text(current.toUpperCase(Locale.ROOT) + " ▾", 13, MUTED);
         button.setTypeface(null, android.graphics.Typeface.BOLD);
         button.setPadding(dp(10), dp(4), dp(8), dp(4));
         GradientDrawable border = new GradientDrawable();
         border.setCornerRadius(dp(6));
-        border.setStroke(dp(1), ACCENT);
+        border.setStroke(dp(1), MUTED);
         button.setBackground(border);
         button.setOnClickListener(v -> {
             PopupMenu menu = new PopupMenu(this, button);

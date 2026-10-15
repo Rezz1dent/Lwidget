@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Breezy Bridge</string>
-    <string name="intro_caption">Local weather transfer from Breezy Weather to KWGT.\nGrant access to Breezy weather data, then refresh the forecast.</string>
+    <string name="intro_caption">Local weather transfer from Breezy Weather to KWGT.\n1. Allow access to Breezy Weather (button below).\n2. In Breezy Weather: Settings → Widgets &amp; live wallpapers → \"Send weather data to Breezy Weather Update Notifier\" → enable Breezy Bridge.\n3. Turn off battery restrictions for Breezy Bridge and Breezy Weather (button below), so background updates are not blocked.\n4. Refresh the weather in Breezy Weather, or tap \"Read Breezy data and send to KWGT\".\nIf Breezy does not list the bridge in step 2: tap \"Read Breezy data and send to KWGT\", close Breezy completely and reopen its settings.</string>
     <string name="grant_button">Allow access to Breezy Weather</string>
     <string name="grant_done">Access to Breezy Weather granted</string>
     <string name="resend_button">Read Breezy data and send to KWGT</string>
@@ -55,4 +55,6 @@
     <string name="var_location">Location name from Breezy</string>
     <string name="var_icon_mdi">Material Design Icons name, as in Breezy widgets (KWGT icon set: Iconify → mdi)</string>
     <string name="var_tomorrow_icon_mdi">Tomorrow\'s Material Design Icons name (Iconify → mdi)</string>
+    <string name="battery_button">Battery settings (no restrictions)</string>
+    <string name="var_precip_now">Precipitation now, mm (current hour), empty when dry</string>
 </resources>

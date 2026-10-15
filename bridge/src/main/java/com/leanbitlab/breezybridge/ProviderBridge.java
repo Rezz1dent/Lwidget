@@ -103,6 +103,7 @@ public final class ProviderBridge {
             Uri weatherUri = base.buildUpon().appendPath("weather")
                 .appendQueryParameter("temperatureUnit", "c")
                 .appendQueryParameter("speedUnit", "kph")
+                .appendQueryParameter("precipitationUnit", "mm")
                 .appendQueryParameter("withDaily", "true")
                 .appendQueryParameter("withHourly", "true")
                 .appendQueryParameter("withMinutely", "false")
@@ -197,6 +198,8 @@ public final class ProviderBridge {
 
         JSONArray daylight = daylight(weather.optJSONArray("hourly"));
         if (daylight != null) result.put("daylight", daylight);
+        JSONArray precipitation = hourlyPrecipitation(weather.optJSONArray("hourly"));
+        if (precipitation != null) result.put("precipitation", precipitation);
 
         TimeZone zone = TimeZone.getTimeZone(timezone.isEmpty() ? "UTC" : timezone);
         SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
@@ -270,6 +273,28 @@ public final class ProviderBridge {
         JSONArray result = new JSONArray();
         for (long[] hour : hours) {
             result.put(new JSONArray().put(hour[0]).put((int) hour[1]));
+        }
+        return result;
+    }
+
+    /** [[hourStartMillis, mm], ...] from Breezy's hourly precipitation.total, sorted by time. */
+    private static JSONArray hourlyPrecipitation(JSONArray hourly) throws org.json.JSONException {
+        if (hourly == null) return null;
+        java.util.List<double[]> hours = new java.util.ArrayList<>();
+        for (int i = 0; i < hourly.length(); i++) {
+            JSONObject hour = hourly.optJSONObject(i);
+            JSONObject precipitation = hour == null ? null : hour.optJSONObject("precipitation");
+            JSONObject total = precipitation == null ? null : precipitation.optJSONObject("total");
+            double mm = value(total);
+            long date = hour == null ? -1 : hour.optLong("date", -1);
+            if (Double.isNaN(mm) || date < 0 || !"mm".equals(unit(total))) continue;
+            hours.add(new double[]{date, mm});
+        }
+        if (hours.isEmpty()) return null;
+        hours.sort((a, b) -> Double.compare(a[0], b[0]));
+        JSONArray result = new JSONArray();
+        for (double[] hour : hours) {
+            result.put(new JSONArray().put((long) hour[0]).put(hour[1]));
         }
         return result;
     }

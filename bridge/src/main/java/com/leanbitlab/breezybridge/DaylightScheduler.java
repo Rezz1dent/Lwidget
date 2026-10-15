@@ -11,7 +11,7 @@ import org.json.JSONObject;
 /**
  * Re-sends the cached weather at the next sunrise/sunset, so the day/night
  * icon switches even if Breezy does not refresh around that time.
- * Uses an inexact alarm: no exact-alarm permission, a few minutes of delay is fine.
+ * Inexact but allowed while idle: no exact-alarm permission, a few minutes of delay is fine.
  */
 public final class DaylightScheduler extends BroadcastReceiver {
     private static final String TAG = "BreezyKwgt";
@@ -29,7 +29,8 @@ public final class DaylightScheduler extends BroadcastReceiver {
             alarms.cancel(intent);
             return;
         }
-        alarms.set(AlarmManager.RTC, next + DELAY_MILLIS, intent);
+        // Allowed in Doze; a plain inexact alarm was observed hours late (moon at 13:00).
+        alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next + DELAY_MILLIS, intent);
         Log.i(TAG, "Next day/night switch at " + new java.util.Date(next));
     }
 

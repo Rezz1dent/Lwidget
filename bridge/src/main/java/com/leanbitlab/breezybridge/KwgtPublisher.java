@@ -29,7 +29,7 @@ public final class KwgtPublisher {
         "tomorrow_precip", "tomorrow_icon",
         "like", "details", "wind_arrow", "today_max", "today_min",
         "today_range", "today_compact", "tomorrow_compact",
-        "icon_flat", "tomorrow_icon_flat", "is_day",
+        "icon_flat", "tomorrow_icon_flat", "is_day", "precip_now",
         "icon_mdi", "tomorrow_icon_mdi"
     };
 
@@ -90,6 +90,7 @@ public final class KwgtPublisher {
             vars.put("condition", data.optString("currentCondition").trim());
         boolean day = isDaylight(data, nowMillis);
         vars.put("is_day", day ? "1" : "0");
+        vars.put("precip_now", precipitationNow(data, nowMillis));
         if (has(data, "currentConditionCode")) {
             int code = data.optInt("currentConditionCode");
             vars.put("code", Integer.toString(code));
@@ -230,6 +231,25 @@ public final class KwgtPublisher {
      * "daylight": [[hourStartMillis, 0|1], ...] sorted by time.
      * Without data (old cache, provider without hourly) it is treated as day.
      */
+    /**
+     * Precipitation of the current hour from Breezy's hourly forecast, e.g. "0,6" (mm, one
+     * decimal, Russian format like the wind); "" when it is dry (< 0.1 mm) or unknown.
+     */
+    static String precipitationNow(JSONObject data, long nowMillis) {
+        JSONArray hours = data.optJSONArray("precipitation");
+        if (hours == null) return "";
+        double mm = Double.NaN;
+        for (int i = 0; i < hours.length(); i++) {
+            JSONArray hour = hours.optJSONArray(i);
+            if (hour == null) continue;
+            long start = hour.optLong(0, Long.MAX_VALUE);
+            if (start > nowMillis) break;
+            mm = nowMillis - start < 3_600_000L ? hour.optDouble(1, Double.NaN) : Double.NaN;
+        }
+        if (Double.isNaN(mm) || mm < 0.05) return "";
+        return String.format(Locale.forLanguageTag("ru-RU"), "%.1f", mm);
+    }
+
     static boolean isDaylight(JSONObject data, long nowMillis) {
         JSONArray hours = data.optJSONArray("daylight");
         if (hours == null) return true;
@@ -295,7 +315,7 @@ public final class KwgtPublisher {
     static String mdiIcon(String breezyCode, int legacyCode, boolean day) {
         String condition = breezyCode.isEmpty() ? breezyCondition(legacyCode) : breezyCode;
         switch (condition) {
-            case "clear": return day ? "white-balance-sunny" : "weather-night";
+            case "clear": return day ? "weather-sunny" : "weather-night";
             case "partly_cloudy": return day ? "weather-partly-cloudy" : "weather-night-partly-cloudy";
             case "rain": return "weather-pouring";
             case "snow": return "weather-snowy";

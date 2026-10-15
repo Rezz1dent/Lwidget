@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Breezy Minimal v73: MDI alarm icon instead of the "◷" character.
+"""Breezy Minimal v74: MDI alarm icon instead of the "◷" character.
 
-Usage: build_v73_preset.py BASE_v72.kwgt OUT.kwgt
+Usage: build_v73_preset.py BASE.kwgt OUT.kwgt   (v74 = the owner's tuned v73 + this)
 
 The next-alarm text in the bottom row becomes a small stack: the MDI icon "alarm"
 ("alarm-off" when no alarm is set) + the time, in the same style and size as the
@@ -13,7 +13,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v7.3 • Manrope"
+TITLE = "Breezy Minimal v7.4 • Manrope"
 ALARM_ICON = '$if(gv(maximal) = 1 | si(alarmon) = 1, "alarm", "alarm-off")$'
 ALARM_TIME = ('$if(gv(maximal) = 1, "20:08 (пн)", if(si(alarmon) = 1, df("HH:mm", si(alarmd))'
               ' + " (" + df("EEE", si(alarmd)) + ")", "—"))$')

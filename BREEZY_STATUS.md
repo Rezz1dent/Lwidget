@@ -20,11 +20,12 @@ Docs in the repo: `bridge/README.md` (setup, variables, credits), `bridge/TODO.m
 `presets/KWGT_NOTES.md` (KWGT file format, Kode formulas, lessons learned on the phone —
 read it before editing presets).
 
-## Current widget: v7.3 (`presets/Breezy_Minimal_v73__Manrope.kwgt`)
+## Current widget: v7.4 (`presets/Breezy_Minimal_v74__Manrope.kwgt`)
 
 Built by a chain of scripts from the owner's hand-tuned exports:
-`v70` (exported from the phone) → `build_v71_preset.py` → `build_v72_preset.py` →
-`build_v73_preset.py`. Fonts come from `make_manrope_fonts.py` (needs the variable
+`v70` (exported from the phone) → `build_v71_preset.py` → `build_v72_preset.py` → owner's
+hand-tuned `v73` (exported; sizes: middle row 22, bottom row 18) → `build_v73_preset.py`
+(alarm icon) = `v74`. Always start the next change from the newest export of the owner. Fonts come from `make_manrope_fonts.py` (needs the variable
 `Manrope[wght].ttf` from google/fonts; static weights, tabular clock digits, narrow minus,
 spacer glyphs in `Manrope-Light-Spaced`).
 
@@ -33,8 +34,8 @@ Layout (root ~497 × 190 units at scale 160, widget 1458 × 533 px, grid 8×3, K
 ```
 05 28            -35° ☀              hours ExtraBold / minutes ExtraLight (95), temp 78, icon 65
 ───────────────────────────
-Воскресенье, 28 сент.   ↖ 12,5 м/с 💧12,5 👤-42°        middle row, size 20
-⏰ 20:08 (пн) 🌇 22:58    -35/-42° 📅 -35/-42° ☂ 100% 💧12,5   bottom row, size 16
+Воскресенье, 28 сент.   ↖ 12,5 м/с 💧12,5 👤-42°        middle row, size 22 (owner)
+⏰ 20:08 (пн) 🌇 22:58    -35/-42° 📅 -35/-42° ☂ 100% 💧12,5   bottom row, size 18 (owner)
 ```
 
 - Middle: date with short month; stack: wind | rain now (`precip_now`, only while it
@@ -50,7 +51,7 @@ Layout (root ~497 × 190 units at scale 160, widget 1458 × 533 px, grid 8×3, K
 - Root globals: `umbrella_test` (switch, always show umbrella), `umbrella_min` (number, %,
   owner uses 60), `maximal` (switch: every row shows its longest value, for overlap checks).
 
-Sizes 20/16 were chosen so the rows fit with `maximal` on; width estimates: text widths from
+Sizes 20/16 were computed so the rows fit with `maximal` on; the owner then set 22/18 by hand; width estimates: text widths from
 the font are exact, stack icons/margins take ~14% more than nominal.
 
 ## Decisions and why
@@ -68,7 +69,7 @@ the font are exact, stack icons/margins take ~14% more than nominal.
 
 ## Open / ideas
 
-- Check v7.3 on the phone with `maximal` on (bottom row has little spare width).
+- Check v7.4 on the phone with `maximal` on (bottom row has little spare width).
 - If size 16 is too small: drop the weekday from the alarm time, or the "°" of the ranges.
 - Possible upstream issue for Breezy: add its own `ACTION_UPDATE_NOTIFIER` to `<queries>`.
 - Publishing the bridge: rename to something neutral (e.g. "Weather Bridge for KWGT"),

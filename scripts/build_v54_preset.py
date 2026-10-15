@@ -7,7 +7,9 @@ Starts from the hand-tuned v50 (presets/Breezy_Minimal_v50__Manrope__control.kwg
 - temperature and icon as in v50;
 - left middle row: "Четверг, 15 октября" (smaller for long names);
 - bottom left: next alarm, then the next sunset/sunrise (KWGT ai(), its own location);
-- bottom right: today's range, calendar icon + tomorrow's range, then the umbrella.
+- bottom right: today's range, then calendar icon + tomorrow's range; with rain the
+  umbrella replaces the calendar icon and the percent follows the range;
+- weather icon: sun/moon variant from KWGT's ai(isday), not the bridge's last update.
 
 Rows are stack groups: KWGT lays the parts out by their real width, so the gaps stay
 even without width estimates. The umbrella group is hidden with config_visible = REMOVE,
@@ -22,7 +24,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v57 • Manrope"
+TITLE = "Breezy Minimal v58 • Manrope"
 MDI = "iconify://mdi?name=Material%20Design%20Icons"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
@@ -39,9 +41,20 @@ SUN_TIME = ("$df(HH:mm, if(ai(isday) = 1, ai(sunset), df(H) >= 12, "
 TOMORROW = '$tc(reg, br(breezy, tomorrow_compact), "Tomorrow: ", "")$'
 # Tomorrow's precipitation as digits in the local variable p ("" when Breezy has none).
 PRECIP = 'lv(p, tc(reg, br(breezy, tomorrow_precip), "[^0-9]", ""))'
-UMBRELLA_VISIBLE = (
-    '$%s + if(gv(umbrella_test) = 1 | gv(maximal) = 1 | (#p != "" & #p >= if(gv(umbrella_min) > 0, '
-    'gv(umbrella_min), 70)), ALWAYS, REMOVE)$' % PRECIP)
+RAIN = ('gv(umbrella_test) = 1 | gv(maximal) = 1 | (#p != "" & #p >= '
+        'if(gv(umbrella_min) > 0, gv(umbrella_min), 70))')
+UMBRELLA_VISIBLE = '$%s + if(%s, ALWAYS, REMOVE)$' % (PRECIP, RAIN)
+# With rain the umbrella takes the calendar icon's place in front of tomorrow's range.
+TOMORROW_ICON = '$%s + if(%s, "umbrella-outline", "calendar-arrow-right")$' % (PRECIP, RAIN)
+# Day/night from KWGT's own astronomy (location, real time): the bridge's choice can be
+# hours old when Breezy or the bridge's alarm did not run. Swap sun/moon variants.
+WEATHER_ICON = (
+    '$lv(i, br(breezy, icon_mdi)) + if(ai(isday) = 1, '
+    'tc(reg, tc(reg, #i, "^weather-night-partly-cloudy$", "weather-partly-cloudy"), '
+    '"^weather-night$", "white-balance-sunny"), '
+    'tc(reg, tc(reg, #i, "^weather-partly-cloudy$", "weather-night-partly-cloudy"), '
+    '"^white-balance-sunny$", "weather-night"))$')
+GROUP_MARGIN = 8.0
 UMBRELLA_PERCENT = '$%s + if(#p = "", 0, #p) + "%%"$' % PRECIP
 
 # Global switch "maximal": every row shows its longest realistic value, to check that
@@ -134,20 +147,22 @@ def main(base, fonts_dir, target):
         row_text(style, "Next alarm", ALARM),
         stack("Sun", [row_icon(icon_style, "Sun icon", "weather-sunset-down", SUN_ICON),
                       row_text(style, "Sun time", SUN_TIME)], 3),
-    ], 14, "TOPLEFT", left_x, bottom_y, date_row.get("internal_events"))
+    ], GROUP_MARGIN, "TOPLEFT", left_x, bottom_y, date_row.get("internal_events"))
 
-    umbrella = stack("Umbrella (Globals: umbrella_test, umbrella_min)", [
-        row_icon(icon_style, "Umbrella icon", "umbrella-outline"),
-        row_text(style, "Umbrella percent", UMBRELLA_PERCENT),
-    ], 2)
-    umbrella["internal_toggles"] = {"config_visible": 10}
-    umbrella["internal_formulas"] = {"config_visible": UMBRELLA_VISIBLE}
-    tomorrow = stack("Today + tomorrow + umbrella", [
+    percent = stack("Umbrella percent (Globals: umbrella_test, umbrella_min)", [
+        row_text(style, "Umbrella percent", UMBRELLA_PERCENT)], 0)
+    percent["internal_toggles"] = {"config_visible": 10}
+    percent["internal_formulas"] = {"config_visible": UMBRELLA_VISIBLE}
+    tomorrow = stack("Today + tomorrow (+ umbrella)", [
         row_text(style, "Today range", "$br(breezy, today_range)$"),
-        stack("Tomorrow", [row_icon(icon_style, "Tomorrow icon", "calendar-arrow-right"),
-                           row_text(style, "Tomorrow range", TOMORROW)], 4),
-        umbrella,
-    ], 12, "TOPRIGHT", right_x, bottom_y, tomorrow_row.get("internal_events"))
+        stack("Tomorrow", [
+            row_icon(icon_style, "Tomorrow icon: calendar, or umbrella with rain",
+                     "calendar-arrow-right", TOMORROW_ICON),
+            row_text(style, "Tomorrow range", TOMORROW),
+            percent,
+        ], 4),
+    ], GROUP_MARGIN, "TOPRIGHT", right_x, bottom_y, tomorrow_row.get("internal_events"))
+    icon["internal_formulas"]["icon_icon"] = WEATHER_ICON
 
     dropped = {"Today • Breezy high/low", "Row 3 • Tomorrow maximum/minimum",
                "Umbrella • percent (see Globals)", "Umbrella • icon (see Globals)"}

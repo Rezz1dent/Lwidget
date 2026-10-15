@@ -20,3 +20,9 @@
   4. Refresh the weather in Breezy Weather (or tap "Read Breezy data and send to KWGT").
   If Breezy does not list the bridge in step 2: tap "Read Breezy data and send to KWGT", close
   Breezy completely and reopen its settings.
+
+- [ ] **Day/night switch can be late.** The re-send at sunrise/sunset uses an inexact
+  `AlarmManager.set(RTC)`, which Doze / app standby can delay for hours (seen: moon icon at
+  13:00). Consider `setAndAllowWhileIdle(RTC_WAKEUP)` or `setWindow`, and check the status line
+  time ("Data received HH:MM") when it happens. Preset v58+ picks sun/moon with KWGT's own
+  `ai(isday)`, so the widget no longer depends on it.

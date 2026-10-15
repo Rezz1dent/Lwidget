@@ -30,7 +30,8 @@ public final class KwgtPublisher {
         "like", "details", "wind_arrow", "today_max", "today_min",
         "today_range", "today_compact", "tomorrow_compact",
         "icon_flat", "tomorrow_icon_flat", "is_day", "precip_now",
-        "icon_mdi", "tomorrow_icon_mdi"
+        "icon_mdi", "tomorrow_icon_mdi", "precip_now_type", "precip_now_icon",
+        "tomorrow_precip_type", "tomorrow_precip_icon"
     };
 
     private KwgtPublisher() {}
@@ -91,6 +92,9 @@ public final class KwgtPublisher {
         boolean day = isDaylight(data, nowMillis);
         vars.put("is_day", day ? "1" : "0");
         vars.put("precip_now", precipitationNow(data, nowMillis));
+        String nowType = precipitationTypeNow(data, nowMillis);
+        vars.put("precip_now_type", nowType);
+        vars.put("precip_now_icon", precipitationIcon(nowType));
         if (has(data, "currentConditionCode")) {
             int code = data.optInt("currentConditionCode");
             vars.put("code", Integer.toString(code));
@@ -168,6 +172,11 @@ public final class KwgtPublisher {
                 if (has(tomorrow, "precipProbability"))
                     vars.put("tomorrow_precip", tomorrow.optString("precipProbability") + "%");
                 vars.put("tomorrow_precip_mm", millimeters(tomorrow.optDouble("precipMm", Double.NaN)));
+                String tomorrowType = precipitationType(tomorrow.optDouble("precipMm", Double.NaN),
+                    tomorrow.optDouble("precipRain", 0), tomorrow.optDouble("precipSnow", 0),
+                    tomorrow.optDouble("precipIce", 0));
+                vars.put("tomorrow_precip_type", tomorrowType);
+                vars.put("tomorrow_precip_icon", precipitationIcon(tomorrowType));
                 String compactRange = shortRange(tomorrow, "maxTemp", "minTemp");
                 if (!compactRange.isEmpty())
                     vars.put("tomorrow_compact", "Tomorrow: " + compactRange);
@@ -248,6 +257,47 @@ public final class KwgtPublisher {
             mm = nowMillis - start < 3_600_000L ? hour.optDouble(1, Double.NaN) : Double.NaN;
         }
         return millimeters(mm);
+    }
+
+    /** Kind of the current hour's precipitation (see precipitationType); "" when dry. */
+    static String precipitationTypeNow(JSONObject data, long nowMillis) {
+        JSONArray hours = data.optJSONArray("precipitation");
+        if (hours == null) return "";
+        JSONArray current = null;
+        for (int i = 0; i < hours.length(); i++) {
+            JSONArray hour = hours.optJSONArray(i);
+            if (hour == null) continue;
+            long start = hour.optLong(0, Long.MAX_VALUE);
+            if (start > nowMillis) break;
+            current = nowMillis - start < 3_600_000L ? hour : null;
+        }
+        if (current == null) return "";
+        return precipitationType(current.optDouble(1, Double.NaN), current.optDouble(2, 0),
+            current.optDouble(3, 0), current.optDouble(4, 0));
+    }
+
+    /**
+     * "rain", "snow" or "mix" (sleet, ice) for precipitation in mm of water; "" when dry
+     * (as in millimeters()). The smaller of rain and snow counts from a quarter of the sum;
+     * a quarter of ice makes it "mix". Without a split from the source: "rain".
+     */
+    static String precipitationType(double total, double rain, double snow, double ice) {
+        if (millimeters(total).isEmpty()) return "";
+        double sum = rain + snow + ice;
+        if (sum < 0.05) return "rain";
+        if (ice >= sum * 0.25) return "mix";
+        if (snow >= sum * 0.75) return "snow";
+        if (snow <= sum * 0.25) return "rain";
+        return "mix";
+    }
+
+    /** MDI icon for a precipitation kind; the drop when dry, so KWGT always gets a valid name. */
+    static String precipitationIcon(String type) {
+        switch (type) {
+            case "snow": return "snowflake";
+            case "mix": return "snowflake-melt";
+            default: return "water-outline";
+        }
     }
 
     /** "4,2" (one decimal, Russian format); "" when dry (< 0.05 mm) or unknown. */

@@ -251,8 +251,17 @@ public final class ProviderBridge {
                     entry.put("precipProbability", Math.round(value(total)));
                 }
             }
-            double mm = halfDayPrecipitation(tomorrowDay, "day") + halfDayPrecipitation(tomorrowDay, "night");
+            double mm = halfDayPrecipitation(tomorrowDay, "day", "total")
+                + halfDayPrecipitation(tomorrowDay, "night", "total");
             if (!Double.isNaN(mm)) entry.put("precipMm", mm);
+            entry.put("precipRain", halfDayPrecipitation(tomorrowDay, "day", "rain")
+                + halfDayPrecipitation(tomorrowDay, "night", "rain")
+                + halfDayPrecipitation(tomorrowDay, "day", "thunderstorm")
+                + halfDayPrecipitation(tomorrowDay, "night", "thunderstorm"));
+            entry.put("precipSnow", halfDayPrecipitation(tomorrowDay, "day", "snow")
+                + halfDayPrecipitation(tomorrowDay, "night", "snow"));
+            entry.put("precipIce", halfDayPrecipitation(tomorrowDay, "day", "ice")
+                + halfDayPrecipitation(tomorrowDay, "night", "ice"));
             forecasts.put(entry);
             result.put("forecasts", forecasts);
         }
@@ -279,7 +288,11 @@ public final class ProviderBridge {
         return result;
     }
 
-    /** [[hourStartMillis, mm], ...] from Breezy's hourly precipitation.total, sorted by time. */
+    /**
+     * [[hourStartMillis, totalMm, rainMm, snowMm, iceMm], ...] from Breezy's hourly precipitation,
+     * sorted by time. Rain includes thunderstorm; snow is in mm of water. Kinds Breezy's source
+     * does not split are 0.
+     */
     private static JSONArray hourlyPrecipitation(JSONArray hourly) throws org.json.JSONException {
         if (hourly == null) return null;
         java.util.List<double[]> hours = new java.util.ArrayList<>();
@@ -290,24 +303,31 @@ public final class ProviderBridge {
             double mm = value(total);
             long date = hour == null ? -1 : hour.optLong("date", -1);
             if (Double.isNaN(mm) || date < 0 || !"mm".equals(unit(total))) continue;
-            hours.add(new double[]{date, mm});
+            hours.add(new double[]{date, mm,
+                millimeters(precipitation, "rain") + millimeters(precipitation, "thunderstorm"),
+                millimeters(precipitation, "snow"), millimeters(precipitation, "ice")});
         }
         if (hours.isEmpty()) return null;
         hours.sort((a, b) -> Double.compare(a[0], b[0]));
         JSONArray result = new JSONArray();
         for (double[] hour : hours) {
-            result.put(new JSONArray().put((long) hour[0]).put(hour[1]));
+            result.put(new JSONArray().put((long) hour[0]).put(hour[1]).put(hour[2])
+                .put(hour[3]).put(hour[4]));
         }
         return result;
     }
 
-    /** Total precipitation of a half day in mm; 0 when absent, NaN only if both are absent. */
-    private static double halfDayPrecipitation(JSONObject daily, String part) {
+    /** One kind of a half day's precipitation in mm ("total", "rain", "snow", ...); 0 when absent. */
+    private static double halfDayPrecipitation(JSONObject daily, String part, String kind) {
         JSONObject half = daily.optJSONObject(part);
-        JSONObject precipitation = half == null ? null : half.optJSONObject("precipitation");
-        JSONObject total = precipitation == null ? null : precipitation.optJSONObject("total");
-        double mm = value(total);
-        return Double.isNaN(mm) || !"mm".equals(unit(total)) ? 0 : mm;
+        return millimeters(half == null ? null : half.optJSONObject("precipitation"), kind);
+    }
+
+    /** precipitation.<kind> in mm; 0 when absent or in another unit. */
+    private static double millimeters(JSONObject precipitation, String kind) {
+        JSONObject measurement = precipitation == null ? null : precipitation.optJSONObject(kind);
+        double mm = value(measurement);
+        return Double.isNaN(mm) || !"mm".equals(unit(measurement)) ? 0 : mm;
     }
 
     private static double dayTemperature(JSONObject daily, String part) {

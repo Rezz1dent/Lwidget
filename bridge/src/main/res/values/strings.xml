@@ -58,4 +58,8 @@
     <string name="battery_button">Battery settings (no restrictions)</string>
     <string name="var_precip_now">Precipitation now, mm (current hour), empty when dry</string>
     <string name="var_tomorrow_precip_mm">Tomorrow\'s precipitation, mm (day + night), empty when dry</string>
+    <string name="var_precip_now_type">Kind of precipitation now: rain, snow or mix (sleet), empty when dry</string>
+    <string name="var_precip_now_icon">Icon for the precipitation now (MDI): water-outline, snowflake, snowflake-melt</string>
+    <string name="var_tomorrow_precip_type">Kind of tomorrow\'s precipitation: rain, snow or mix, empty when dry</string>
+    <string name="var_tomorrow_precip_icon">Icon for tomorrow\'s precipitation (MDI): water-outline, snowflake, snowflake-melt</string>
 </resources>

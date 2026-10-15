@@ -58,4 +58,8 @@
     <string name="battery_button">Настройки батареи (без ограничений)</string>
     <string name="var_precip_now">Осадки сейчас, мм (текущий час), пусто без осадков</string>
     <string name="var_tomorrow_precip_mm">Осадки завтра, мм (день + ночь), пусто без осадков</string>
+    <string name="var_precip_now_type">Вид осадков сейчас: rain (дождь), snow (снег), mix (мокрый снег), пусто без осадков</string>
+    <string name="var_precip_now_icon">Иконка осадков сейчас (MDI): water-outline, snowflake, snowflake-melt</string>
+    <string name="var_tomorrow_precip_type">Вид осадков завтра: rain, snow или mix, пусто без осадков</string>
+    <string name="var_tomorrow_precip_icon">Иконка осадков завтра (MDI): water-outline, snowflake, snowflake-melt</string>
 </resources>

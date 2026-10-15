@@ -33,6 +33,13 @@ minutes of alarm delay).
 decimal ("0,6"), empty when it is dry. KWGT can show it only while it rains:
 `$if(br(breezy, precip_now) != "", br(breezy, precip_now) + " мм")$`.
 
+`precip_now_type` / `tomorrow_precip_type` tell the kind: `rain`, `snow` or `mix` (sleet, freezing
+rain), empty when dry. Breezy reports rain, snow and ice separately (snow in mm of water); the
+smaller of rain and snow counts from a quarter of the sum, a quarter of ice makes it `mix`; a source
+without the split gives `rain`. `precip_now_icon` / `tomorrow_precip_icon` hold the matching
+Material Design Icons name (`water-outline`, `snowflake`, `snowflake-melt`; the drop when dry), for
+a KWGT icon formula: `$br(breezy, precip_now_icon)$`.
+
 ### Breezy icons
 
 `icon_mdi` and `tomorrow_icon_mdi` hold the [Material Design Icons](https://pictogrammers.com/library/mdi/)

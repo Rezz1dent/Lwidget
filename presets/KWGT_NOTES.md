@@ -105,6 +105,10 @@ Read in formulas with `gv(name)`; bind a property with toggle `100` + `internal_
 - **`lv(name, value)`** stores a local variable (returns `""`), read with `#name`:
   `$lv(p, tc(reg, br(breezy, tomorrow_precip), "[^0-9]", "")) + if(#p >= 70, #p + "%")$`.
   Use it to avoid repeating long sub-formulas.
+  **Never name a variable like a Kode function** (`mi`, `bi`, `si`, `df`...): v75's first build
+  used `lv(mi, …)` / `lv(bi, …)` in size formulas and the rows vanished on the phone; plain
+  sub-formulas worked. Numeric properties (`text_size`, `icon_size`, `position_offset_y`) take
+  formulas like any other (toggle 10).
 - `df(format[, date])`: `HH:mm`, `EEEE` (weekday, system language), `d MMM`; `df(f)` weekday 1=Mon…7=Sun,
   `df(e)` used for weekday in AllInOne; literal text in single quotes: `df("m 'min'")`.
 - Dates: `dp()`, Kustom date format `2022y11M10d13h13m41s`, offsets `a1d` (add) / `r2h` (remove).

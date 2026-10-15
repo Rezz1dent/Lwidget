@@ -10,7 +10,7 @@ fork, not used any more). Conversation with the owner is in Russian.
   `com.rezz1dent.breezykwgtbridge`): reads Breezy Weather's ContentProvider
   (`org.breezyweather.provider.weather`, needs Breezy 6.1+ and the `READ_PROVIDER`
   permission) when Breezy's "Update Notifier" broadcast arrives, and sends ~35 variables to
-  KWGT as `$br(breezy, name)$`. Current version **1.7** (versionCode 10). APK is built by the
+  KWGT as `$br(breezy, name)$`. Current version **1.8** (versionCode 11). APK is built by the
   GitHub Actions workflow "Breezy Bridge APK" on every push to `bridge/**`
   (artifact `breezy-bridge-debug`).
 - **KWGT preset** "Breezy Minimal" (`presets/`): clock + Breezy weather, Manrope fonts,
@@ -20,12 +20,12 @@ Docs in the repo: `bridge/README.md` (setup, variables, credits), `bridge/TODO.m
 `presets/KWGT_NOTES.md` (KWGT file format, Kode formulas, lessons learned on the phone —
 read it before editing presets).
 
-## Current widget: v7.5 (`presets/Breezy_Minimal_v75__Manrope.kwgt`)
+## Current widget: v7.6 (`presets/Breezy_Minimal_v76__Manrope.kwgt`)
 
 Built by a chain of scripts from the owner's hand-tuned exports:
 `v70` (exported from the phone) → `build_v71_preset.py` → `build_v72_preset.py` → owner's
 hand-tuned `v73` (exported; sizes: middle row 22, bottom row 18) → `build_v73_preset.py`
-(alarm icon) = `v74` → `build_v75_preset.py` (automatic row sizes) = `v75`. Always start the next change from the newest export of the owner. Fonts come from `make_manrope_fonts.py` (needs the variable
+(alarm icon) = `v74` → `build_v75_preset.py` (automatic row sizes) = `v75` → `build_v76_preset.py` (rain / snow / mix icons) = `v76`. Always start the next change from the newest export of the owner. Fonts come from `make_manrope_fonts.py` (needs the variable
 `Manrope[wght].ttf` from google/fonts; static weights, tabular clock digits, narrow minus,
 spacer glyphs in `Manrope-Light-Spaced`).
 
@@ -45,11 +45,16 @@ Layout (root ~497 × 190 units at scale 160, widget 1458 × 533 px, grid 8×3, K
 - Bottom right: stack: today's range | `calendar-arrow-right` + tomorrow's range | umbrella
   group (`umbrella-outline` + probability + drop + `tomorrow_precip_mm`), hidden with
   `config_visible = REMOVE` below the threshold.
+- Precipitation icon (rain now, tomorrow's mm): bridge 1.8 `precip_now_icon` /
+  `tomorrow_precip_icon` = `water-outline` (rain), `snowflake` (snow), `snowflake-melt` (mix:
+  rain and snow each from a quarter of the sum, or a quarter of ice); drop with an older bridge.
 - Weather icon: bridge's `icon_mdi`, sun/moon variant re-chosen in KWGT with `ai(isday)`;
   clear day = outline `weather-sunny`.
 - Shadow everywhere: `#68000000`, distance 1, small blur (blur grows the frame and shifts text).
 - Root globals: `umbrella_test` (switch, always show umbrella), `umbrella_min` (number, %,
-  owner uses 60), `maximal` (switch: every row shows its longest value, for overlap checks).
+  owner uses 60), `maximal` (switch: every row shows its longest value, for overlap checks),
+  `precip_test` (number: 0 data, 1 rain, 2 snow, 3 mix; shows both precipitation blocks and
+  the umbrella with that icon).
 
 Automatic sizes (v7.5): KWGT cannot measure text, so each row estimates its width from the
 character and icon counts of the current values (middle 0.52 em/char + 1.1 em/icon, bottom

@@ -29,3 +29,9 @@
 
 - [x] **Outline sun.** (done in 1.6) Send `weather-sunny` (outline, as in Breezy's widget) instead of
   `white-balance-sunny` for a clear day in `icon_mdi`. Preset v60 already swaps it.
+
+## Precipitation
+
+- [x] **Rain / snow / mix.** (done in 1.8) Send the kind of precipitation now and tomorrow
+  (`precip_now_type`, `tomorrow_precip_type`: rain / snow / mix) and a matching MDI icon
+  (`water-outline`, `snowflake`, `snowflake-melt`), so the widget can swap the drop.

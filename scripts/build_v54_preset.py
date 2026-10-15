@@ -25,7 +25,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v59 • Manrope"
+TITLE = "Breezy Minimal v60 • Manrope"
 MDI = "iconify://mdi?name=Material%20Design%20Icons"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
@@ -50,12 +50,14 @@ UMBRELLA_VISIBLE = '$%s + if(%s, ALWAYS, REMOVE)$' % (PRECIP, RAIN)
 # With rain the umbrella takes the calendar icon's place in front of tomorrow's range.
 # Day/night from KWGT's own astronomy (location, real time): the bridge's choice can be
 # hours old when Breezy or the bridge's alarm did not run. Swap sun/moon variants.
+# Clear day as the outline sun "weather-sunny", like Breezy's own widget (the bridge
+# sends the filled "white-balance-sunny").
 WEATHER_ICON = (
     '$lv(i, br(breezy, icon_mdi)) + if(ai(isday) = 1, '
     'tc(reg, tc(reg, #i, "^weather-night-partly-cloudy$", "weather-partly-cloudy"), '
-    '"^weather-night$", "white-balance-sunny"), '
+    '"^(weather-night|white-balance-sunny)$", "weather-sunny"), '
     'tc(reg, tc(reg, #i, "^weather-partly-cloudy$", "weather-night-partly-cloudy"), '
-    '"^white-balance-sunny$", "weather-night"))$')
+    '"^(white-balance-sunny|weather-sunny)$", "weather-night"))$')
 GROUP_MARGIN = 8.0
 UMBRELLA_PERCENT = '$%s + if(#p = "", 0, #p) + "%%"$' % PRECIP
 

@@ -26,3 +26,6 @@
   13:00). Consider `setAndAllowWhileIdle(RTC_WAKEUP)` or `setWindow`, and check the status line
   time ("Data received HH:MM") when it happens. Preset v58+ picks sun/moon with KWGT's own
   `ai(isday)`, so the widget no longer depends on it.
+
+- [ ] **Outline sun.** Send `weather-sunny` (outline, as in Breezy's widget) instead of
+  `white-balance-sunny` for a clear day in `icon_mdi`. Preset v60 already swaps it.

@@ -26,7 +26,7 @@ public final class KwgtPublisher {
         "humidity", "precip", "wind", "wind_kmh", "wind_ms",
         "wind_direction", "wind_degrees", "wind_text", "location",
         "tomorrow_max", "tomorrow_min", "tomorrow_range", "tomorrow",
-        "tomorrow_precip", "tomorrow_icon",
+        "tomorrow_precip", "tomorrow_precip_mm", "tomorrow_icon",
         "like", "details", "wind_arrow", "today_max", "today_min",
         "today_range", "today_compact", "tomorrow_compact",
         "icon_flat", "tomorrow_icon_flat", "is_day", "precip_now",
@@ -167,6 +167,7 @@ public final class KwgtPublisher {
                 }
                 if (has(tomorrow, "precipProbability"))
                     vars.put("tomorrow_precip", tomorrow.optString("precipProbability") + "%");
+                vars.put("tomorrow_precip_mm", millimeters(tomorrow.optDouble("precipMm", Double.NaN)));
                 String compactRange = shortRange(tomorrow, "maxTemp", "minTemp");
                 if (!compactRange.isEmpty())
                     vars.put("tomorrow_compact", "Tomorrow: " + compactRange);
@@ -246,6 +247,11 @@ public final class KwgtPublisher {
             if (start > nowMillis) break;
             mm = nowMillis - start < 3_600_000L ? hour.optDouble(1, Double.NaN) : Double.NaN;
         }
+        return millimeters(mm);
+    }
+
+    /** "4,2" (one decimal, Russian format); "" when dry (< 0.05 mm) or unknown. */
+    static String millimeters(double mm) {
         if (Double.isNaN(mm) || mm < 0.05) return "";
         return String.format(Locale.forLanguageTag("ru-RU"), "%.1f", mm);
     }

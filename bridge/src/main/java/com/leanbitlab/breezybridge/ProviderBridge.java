@@ -251,6 +251,8 @@ public final class ProviderBridge {
                     entry.put("precipProbability", Math.round(value(total)));
                 }
             }
+            double mm = halfDayPrecipitation(tomorrowDay, "day") + halfDayPrecipitation(tomorrowDay, "night");
+            if (!Double.isNaN(mm)) entry.put("precipMm", mm);
             forecasts.put(entry);
             result.put("forecasts", forecasts);
         }
@@ -297,6 +299,15 @@ public final class ProviderBridge {
             result.put(new JSONArray().put((long) hour[0]).put(hour[1]));
         }
         return result;
+    }
+
+    /** Total precipitation of a half day in mm; 0 when absent, NaN only if both are absent. */
+    private static double halfDayPrecipitation(JSONObject daily, String part) {
+        JSONObject half = daily.optJSONObject(part);
+        JSONObject precipitation = half == null ? null : half.optJSONObject("precipitation");
+        JSONObject total = precipitation == null ? null : precipitation.optJSONObject("total");
+        double mm = value(total);
+        return Double.isNaN(mm) || !"mm".equals(unit(total)) ? 0 : mm;
     }
 
     private static double dayTemperature(JSONObject daily, String part) {

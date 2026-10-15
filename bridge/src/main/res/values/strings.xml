@@ -57,4 +57,5 @@
     <string name="var_tomorrow_icon_mdi">Tomorrow\'s Material Design Icons name (Iconify → mdi)</string>
     <string name="battery_button">Battery settings (no restrictions)</string>
     <string name="var_precip_now">Precipitation now, mm (current hour), empty when dry</string>
+    <string name="var_tomorrow_precip_mm">Tomorrow\'s precipitation, mm (day + night), empty when dry</string>
 </resources>

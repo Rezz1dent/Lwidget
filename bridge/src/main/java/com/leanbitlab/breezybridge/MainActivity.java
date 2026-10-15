@@ -88,6 +88,7 @@ public final class MainActivity extends Activity {
         new Entry(R.string.group_tomorrow, "tomorrow", R.string.var_tomorrow),
         new Entry(R.string.group_tomorrow, "tomorrow_compact", R.string.var_tomorrow_compact),
         new Entry(R.string.group_tomorrow, "tomorrow_precip", R.string.var_tomorrow_precip),
+        new Entry(R.string.group_tomorrow, "tomorrow_precip_mm", R.string.var_tomorrow_precip_mm),
         new Entry(R.string.group_tomorrow, "tomorrow_icon", R.string.var_tomorrow_icon),
         new Entry(R.string.group_tomorrow, "tomorrow_icon_flat", R.string.var_tomorrow_icon_flat),
         new Entry(R.string.group_tomorrow, "tomorrow_icon_mdi", R.string.var_tomorrow_icon_mdi),

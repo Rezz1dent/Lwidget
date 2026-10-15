@@ -1,0 +1,165 @@
+#!/usr/bin/env python3
+"""Breezy Minimal v54: v50 layout + full date, tomorrow icon, sun times, umbrella in stacks.
+
+Usage: build_v54_preset.py BASE_v50.kwgt FONTS_DIR OUT.kwgt
+
+Starts from the hand-tuned v50 (presets/Breezy_Minimal_v50__Manrope__control.kwgt):
+- temperature and icon as in v50, today's range in small type under the icon;
+- left middle row: "Четверг, 15 октября" (smaller for long names);
+- bottom left: next alarm, then the next sunset/sunrise (KWGT ai(), its own location);
+- bottom right: calendar icon + tomorrow's range, then the umbrella + percent.
+
+Rows are stack groups: KWGT lays the parts out by their real width, so the gaps stay
+even without width estimates. The umbrella group is hidden with config_visible = REMOVE,
+which also removes its place in the row. The umbrella settings stay in the root globals
+(umbrella_test, umbrella_min).
+"""
+import copy
+import json
+import os
+import sys
+import time
+import uuid
+import zipfile
+
+TITLE = "Breezy Minimal v54 • Manrope"
+MDI = "iconify://mdi?name=Material%20Design%20Icons"
+FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
+FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
+         "Manrope-Regular"]
+ASCENT, CAP = 1.066, 0.72
+ROW_ICON = 22.0
+RANGE_SIZE = 17.0
+
+DATE = '$tc(cap, df("EEEE")) + df(", d MMMM")$'
+DATE_SIZE = '$if(tc(len, df("EEEE, d MMMM")) > 20, 20, 23)$'
+ALARM = ('$if(si(alarmon)=1, "◷ " + df("HH:mm", si(alarmd)) + " (" + df("EEE", si(alarmd))'
+         ' + ")", "◷ —")$')
+SUN_ICON = '$if(ai(isday) = 1, "weather-sunset-down", "weather-sunset-up")$'
+SUN_TIME = ("$df(HH:mm, if(ai(isday) = 1, ai(sunset), df(H) >= 12, "
+            "ai(sunrise, a1d), ai(sunrise)))$")
+TOMORROW = '$tc(reg, br(breezy, tomorrow_compact), "Tomorrow: ", "")$'
+# Tomorrow's precipitation as digits in the local variable p ("" when Breezy has none).
+PRECIP = 'lv(p, tc(reg, br(breezy, tomorrow_precip), "[^0-9]", ""))'
+UMBRELLA_VISIBLE = (
+    '$%s + if(gv(umbrella_test) = 1 | (#p != "" & #p >= if(gv(umbrella_min) > 0, '
+    'gv(umbrella_min), 70)), ALWAYS, REMOVE)$' % PRECIP)
+UMBRELLA_PERCENT = '$%s + if(#p = "", 0, #p) + "%%"$' % PRECIP
+
+
+def strip(item, *prefixes):
+    return {k: v for k, v in item.items() if k.startswith(prefixes)}
+
+
+def row_text(style, title, expression):
+    item = strip(style, "text_", "paint_", "fx_")
+    item.update(internal_type="TextModule", internal_title=title, text_expression=expression)
+    return item
+
+
+def row_icon(style, title, icon, formula=None):
+    item = strip(style, "paint_", "fx_")
+    item.update(internal_type="FontIconModule", internal_title=title, icon_set=MDI,
+                icon_icon=icon, icon_size=ROW_ICON)
+    if formula:
+        item.update(internal_toggles={"icon_icon": 10}, internal_formulas={"icon_icon": formula})
+    return item
+
+
+def stack(title, children, margin, anchor=None, x=None, y=None, events=None):
+    item = {"internal_type": "StackLayerModule", "internal_title": title,
+            "config_stacking": "HORIZONTAL_CENTER", "config_margin": margin,
+            "viewgroup_items": children}
+    if anchor:
+        item.update(position_anchor=anchor, position_offset_x=x, position_offset_y=y)
+    if events:
+        item["internal_events"] = events
+    return item
+
+
+def main(base, fonts_dir, target):
+    source = zipfile.ZipFile(base)
+    preset = json.loads(source.read("preset.json").decode("utf-8"))
+    info = preset["preset_info"]
+    info.update(title=TITLE, id=str(uuid.uuid4()), ts=int(time.time() * 1000))
+    info["description"] = (
+        "Manrope clock, Breezy temperature and icon with today's range under it; full date, "
+        "next alarm and sunrise/sunset on the left; tomorrow and the umbrella (Globals: "
+        "umbrella_test, umbrella_min) on the right. Reboot the phone once after the first "
+        "import so the home screen loads the fonts. Data from Breezy Bridge 1.4+.")
+
+    items = preset["preset_root"]["viewgroup_items"]
+    by_title = {item.get("internal_title"): item for item in items}
+    style = by_title["Row 2 • Like / arrow wind / humidity"]       # row text style
+    icon_style = dict(by_title["Umbrella • icon (see Globals)"])   # row icon style
+    icon_style.pop("internal_toggles", None)
+    icon_style.pop("internal_formulas", None)
+    date_row = by_title["Date + next alarm"]
+    tomorrow_row = by_title["Row 3 • Tomorrow maximum/minimum"]
+    today_row = by_title["Today • Breezy high/low"]
+    icon = by_title["Row 1 • Current weather icon (Breezy, Iconify mdi)"]
+    left_x = date_row["position_offset_x"]
+    right_x = style["position_offset_x"]
+    bottom_y = today_row["position_offset_y"]
+
+    date_row.update(internal_title="Date", text_expression=DATE)
+    date_row.setdefault("internal_toggles", {})["text_size"] = 10
+    date_row.setdefault("internal_formulas", {})["text_size"] = DATE_SIZE
+
+    alarm_sun = stack("Next alarm + next sunset/sunrise", [
+        row_text(style, "Next alarm", ALARM),
+        stack("Sun", [row_icon(icon_style, "Sun icon", "weather-sunset-down", SUN_ICON),
+                      row_text(style, "Sun time", SUN_TIME)], 3),
+    ], 14, "TOPLEFT", left_x, bottom_y, date_row.get("internal_events"))
+
+    umbrella = stack("Umbrella (Globals: umbrella_test, umbrella_min)", [
+        row_icon(icon_style, "Umbrella icon", "umbrella-outline"),
+        row_text(style, "Umbrella percent", UMBRELLA_PERCENT),
+    ], 2)
+    umbrella["internal_toggles"] = {"config_visible": 10}
+    umbrella["internal_formulas"] = {"config_visible": UMBRELLA_VISIBLE}
+    tomorrow = stack("Tomorrow + umbrella", [
+        stack("Tomorrow", [row_icon(icon_style, "Tomorrow icon", "calendar-arrow-right"),
+                           row_text(style, "Tomorrow range", TOMORROW)], 4),
+        umbrella,
+    ], 12, "TOPRIGHT", right_x, bottom_y, tomorrow_row.get("internal_events"))
+
+    # Today's range, small, right under the weather icon.
+    range_cap = icon["position_offset_y"] + icon["icon_size"] + 2
+    today = row_text(style, "Today • range under the icon", "$br(breezy, today_range)$")
+    today.update(text_size=RANGE_SIZE, position_anchor="TOPRIGHT", position_offset_x=right_x,
+                 position_offset_y=round(range_cap - (ASCENT - CAP) * RANGE_SIZE, 1))
+
+    dropped = {"Today • Breezy high/low", "Row 3 • Tomorrow maximum/minimum",
+               "Umbrella • percent (see Globals)", "Umbrella • icon (see Globals)"}
+    result = []
+    for item in items:
+        if item.get("internal_title") in dropped:
+            continue
+        result.append(item)
+        if item is icon:
+            result.append(today)
+        if item is date_row:
+            result.append(alarm_sun)
+        if item is style:
+            result.append(tomorrow)
+    preset["preset_root"]["viewgroup_items"] = result
+
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as out:
+        for entry in source.infolist():
+            if entry.filename.startswith("fonts/"):
+                continue
+            data = source.read(entry.filename)
+            if entry.filename == "preset.json":
+                data = json.dumps(preset, ensure_ascii=False, indent=2).encode("utf-8")
+            out.writestr(entry, data)
+        template = source.getinfo("preset.json")
+        for name in FONTS:
+            entry = copy.copy(template)
+            entry.filename = "fonts/%s.ttf" % name
+            with open(os.path.join(fonts_dir, name + ".ttf"), "rb") as f:
+                out.writestr(entry, f.read())
+
+
+if __name__ == "__main__":
+    main(*sys.argv[1:4])

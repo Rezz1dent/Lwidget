@@ -22,7 +22,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v56 • Manrope"
+TITLE = "Breezy Minimal v57 • Manrope"
 MDI = "iconify://mdi?name=Material%20Design%20Icons"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
@@ -46,16 +46,17 @@ UMBRELLA_PERCENT = '$%s + if(#p = "", 0, #p) + "%%"$' % PRECIP
 
 # Global switch "maximal": every row shows its longest realistic value, to check that
 # nothing overlaps (winter temperatures, longest weekday and month, umbrella at 100%).
+# The bridge sends temperatures with "-" (hyphen), drawn as a narrow minus by our fonts.
 MAXIMAL = {"index": 3, "type": "SWITCH", "title": "Maximal: longest values everywhere (test)"}
 LONGEST = {
     "Date": "Воскресенье, 28 сентября",
     "Next alarm": "◷ 20:08 (пн)",
     "Sun time": "22:58",
-    "Today range": "−35/−42°",
-    "Tomorrow range": "−35/−42°",
+    "Today range": "-35/-42°",
+    "Tomorrow range": "-35/-42°",
     "Umbrella percent": "100%",
-    "Row 1 • Breezy temperature": "−35°",
-    "Row 2 • Like / arrow wind / humidity": "↖ 12,5 м/с like −42°",
+    "Row 1 • Breezy temperature": "-35°",
+    "Row 2 • Like / arrow wind / humidity": "↖ 12,5 м/с like -42°",
 }
 
 

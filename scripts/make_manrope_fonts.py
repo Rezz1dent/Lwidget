@@ -23,6 +23,28 @@ SPACER_COUNT = 450   # up to 0.9 em
 DIGITS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 
 
+# Temperatures are long ("-35/-42°"): a narrower minus. The hyphen's bar is scaled to
+# MINUS_SCALE of its width and its side bearings tightened; U+2212 maps to it as well.
+MINUS_SCALE = 0.7
+MINUS_ADVANCE = 560   # font units (Manrope's hyphen: 840)
+
+
+def narrow_minus(font):
+    cmap = font.getBestCmap()
+    name = cmap[ord("-")]
+    glyph = font["glyf"][name]
+    coords = glyph.coordinates
+    xs = [x for x, _ in coords]
+    center = (min(xs) + max(xs)) / 2
+    for i, (x, y) in enumerate(coords):
+        coords[i] = (round(MINUS_ADVANCE / 2 + (x - center) * MINUS_SCALE), y)
+    glyph.recalcBounds(font["glyf"])
+    font["hmtx"][name] = (MINUS_ADVANCE, glyph.xMin)
+    for table in font["cmap"].tables:
+        if table.isUnicode():
+            table.cmap[0x2212] = name
+
+
 def add_spacers(font):
     """Empty glyphs U+E100+k with advance k * SPACER_STEP: exact letter spacing in KWGT,
     which has no letter-spacing setting for text."""
@@ -39,6 +61,7 @@ def add_spacers(font):
 
 def build(variable, out_dir, style, weight, tabular, spacers=False):
     font = instancer.instantiateVariableFont(TTFont(variable), {"wght": weight})
+    narrow_minus(font)
     if spacers:
         add_spacers(font)
     name = "Manrope-%s%s" % (style, "-Tnum" if tabular else "-Spaced" if spacers else "")

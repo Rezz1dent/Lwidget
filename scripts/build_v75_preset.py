@@ -23,23 +23,27 @@ BOTTOM = {"big": 20, "small": 18}  # alarm, sun | today, tomorrow, umbrella
 ASCENT = 1.066
 
 PRECIP = 'tc(reg, br(breezy, tomorrow_precip), "[^0-9]", "")'
-MIDDLE_SMALL = (
-    'lv(mc, tc(len, df("EEEE, d MMM")) + tc(len, br(breezy, wind_ms)) + 2 '
-    '+ tc(len, br(breezy, like)) + tc(len, br(breezy, precip_now))) + '
-    'lv(mi, 1 + if(br(breezy, precip_now) != "", 1, 0)) + '
-    'if(gv(maximal) = 1 | {big} * (0.52 * #mc + 1.1 * #mi) + 8 + 8 * #mi > {fit}, %s, %s)'
-).format(big=MIDDLE["big"], fit=FIT)
-BOTTOM_SMALL = (
-    'lv(p, {precip}) + '
-    'lv(u, if(gv(umbrella_test) = 1 | gv(maximal) = 1 | (#p != "" & #p >= '
-    'if(gv(umbrella_min) > 0, gv(umbrella_min), 70)), 1, 0)) + '
-    'lv(m, if(#u = 1 & br(breezy, tomorrow_precip_mm) != "", 1, 0)) + '
-    'lv(bc, if(si(alarmon) = 1, 10, 1) + 5 + tc(len, br(breezy, today_range)) '
-    '+ tc(len, tc(reg, br(breezy, tomorrow_compact), "Tomorrow: ", "")) '
-    '+ #u * (tc(len, #p) + 1) + #m * tc(len, br(breezy, tomorrow_precip_mm))) + '
-    'lv(bi, 3 + #u + #m) + '
-    'if(gv(maximal) = 1 | {big} * (0.55 * #bc + 1.3 * #bi) + 16 + 8 * #bi > {fit}, %s, %s)'
-).format(precip=PRECIP, big=BOTTOM["big"], fit=FIT)
+# No lv()/#name here: the first build used variables named mi/bi (KWGT functions) and the
+# rows vanished. Plain sub-formulas only, so the result is a bare number.
+RAIN_NOW = 'if(br(breezy, precip_now) != "", 1, 0)'
+MIDDLE_CHARS = ('(tc(len, df("EEEE, d MMM")) + tc(len, br(breezy, wind_ms)) + 2 '
+                '+ tc(len, br(breezy, like)) + tc(len, br(breezy, precip_now)))')
+MIDDLE_ICONS = '(1 + %s)' % RAIN_NOW
+MIDDLE_WIDE = '{big} * (0.52 * {c} + 1.1 * {i}) + 8 + 8 * {i} > {fit}'.format(
+    big=MIDDLE["big"], c=MIDDLE_CHARS, i=MIDDLE_ICONS, fit=FIT)
+UMBRELLA = ('if(gv(umbrella_test) = 1 | gv(maximal) = 1 | ({p} != "" & {p} >= '
+            'if(gv(umbrella_min) > 0, gv(umbrella_min), 70)), 1, 0)').format(p=PRECIP)
+TOMORROW_MM = 'if({u} = 1 & br(breezy, tomorrow_precip_mm) != "", 1, 0)'.format(u=UMBRELLA)
+BOTTOM_CHARS = ('(if(si(alarmon) = 1, 10, 1) + 5 + tc(len, br(breezy, today_range)) '
+                '+ tc(len, tc(reg, br(breezy, tomorrow_compact), "Tomorrow: ", "")) '
+                '+ {u} * (tc(len, {p}) + 1) '
+                '+ {m} * tc(len, br(breezy, tomorrow_precip_mm)))').format(
+                    u=UMBRELLA, p=PRECIP, m=TOMORROW_MM)
+BOTTOM_ICONS = '(3 + {u} + {m})'.format(u=UMBRELLA, m=TOMORROW_MM)
+BOTTOM_WIDE = '{big} * (0.55 * {c} + 1.3 * {i}) + 16 + 8 * {i} > {fit}'.format(
+    big=BOTTOM["big"], c=BOTTOM_CHARS, i=BOTTOM_ICONS, fit=FIT)
+MIDDLE_SMALL = 'if(gv(maximal) = 1 | ' + MIDDLE_WIDE + ', %s, %s)'
+BOTTOM_SMALL = 'if(gv(maximal) = 1 | ' + BOTTOM_WIDE + ', %s, %s)'
 
 
 def walk(items):
@@ -60,8 +64,7 @@ def formula(item, key, expression):
 def auto_size(roots, choose, sizes):
     """Size formula on every text and icon; y formula on the roots keeps the baseline.
 
-    `choose` is "lv(...) + ... + if(row is too wide, %s, %s)" (local variables first, as
-    in the umbrella formula that already works on the phone); it gets (small, big) values.
+    `choose` is "if(row is too wide, %s, %s)"; it gets the (small, big) values.
     """
     for root in roots:
         current = next(i for i in walk([root]) if i["internal_type"] == "TextModule")["text_size"]

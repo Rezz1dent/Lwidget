@@ -20,12 +20,12 @@ Docs in the repo: `bridge/README.md` (setup, variables, credits), `bridge/TODO.m
 `presets/KWGT_NOTES.md` (KWGT file format, Kode formulas, lessons learned on the phone —
 read it before editing presets).
 
-## Current widget: v7.4 (`presets/Breezy_Minimal_v74__Manrope.kwgt`)
+## Current widget: v7.5 (`presets/Breezy_Minimal_v75__Manrope.kwgt`)
 
 Built by a chain of scripts from the owner's hand-tuned exports:
 `v70` (exported from the phone) → `build_v71_preset.py` → `build_v72_preset.py` → owner's
 hand-tuned `v73` (exported; sizes: middle row 22, bottom row 18) → `build_v73_preset.py`
-(alarm icon) = `v74`. Always start the next change from the newest export of the owner. Fonts come from `make_manrope_fonts.py` (needs the variable
+(alarm icon) = `v74` → `build_v75_preset.py` (automatic row sizes) = `v75`. Always start the next change from the newest export of the owner. Fonts come from `make_manrope_fonts.py` (needs the variable
 `Manrope[wght].ttf` from google/fonts; static weights, tabular clock digits, narrow minus,
 spacer glyphs in `Manrope-Light-Spaced`).
 
@@ -34,8 +34,8 @@ Layout (root ~497 × 190 units at scale 160, widget 1458 × 533 px, grid 8×3, K
 ```
 05 28            -35° ☀              hours ExtraBold / minutes ExtraLight (95), temp 78, icon 65
 ───────────────────────────
-Воскресенье, 28 сент.   ↖ 12,5 м/с 💧12,5 👤-42°        middle row, size 22 (owner)
-⏰ 20:08 (пн) 🌇 22:58    -35/-42° 📅 -35/-42° ☂ 100% 💧12,5   bottom row, size 18 (owner)
+Воскресенье, 28 сент.   ↖ 12,5 м/с 💧12,5 👤-42°        middle row, size 22 / 20 (auto)
+⏰ 20:08 (пн) 🌇 22:58    -35/-42° 📅 -35/-42° ☂ 100% 💧12,5   bottom row, size 20 / 18 (auto)
 ```
 
 - Middle: date with short month; stack: wind | rain now (`precip_now`, only while it
@@ -51,8 +51,14 @@ Layout (root ~497 × 190 units at scale 160, widget 1458 × 533 px, grid 8×3, K
 - Root globals: `umbrella_test` (switch, always show umbrella), `umbrella_min` (number, %,
   owner uses 60), `maximal` (switch: every row shows its longest value, for overlap checks).
 
-Sizes 20/16 were computed so the rows fit with `maximal` on; the owner then set 22/18 by hand; width estimates: text widths from
-the font are exact, stack icons/margins take ~14% more than nominal.
+Automatic sizes (v7.5): KWGT cannot measure text, so each row estimates its width from the
+character and icon counts of the current values (middle 0.52 em/char + 1.1 em/icon, bottom
+0.55 + 1.3, plus margins; limit 445 units for both halves of a row) and uses the big size
+(middle 22, bottom 20) when it fits, else the small one (20 / 18, the owner's sizes). Formulas
+sit on `text_size` / `icon_size` of every text and icon and on `position_offset_y` of the row
+roots (keeps the baseline). `maximal` always shows the small size. Constants at the top of
+`build_v75_preset.py`. Calibration: text widths from the font are exact, stack icons/margins
+take ~14% more than nominal; the estimate is deliberately on the wide side.
 
 ## Decisions and why
 
@@ -69,8 +75,8 @@ the font are exact, stack icons/margins take ~14% more than nominal.
 
 ## Open / ideas
 
-- Check v7.4 on the phone with `maximal` on (bottom row has little spare width).
-- If size 16 is too small: drop the weekday from the alarm time, or the "°" of the ranges.
+- Check v7.5 on the phone: big sizes with short values, switch to small with long ones /
+  `maximal`. If the switch comes too early or too late, tune the coefficients or `FIT`.
 - Possible upstream issue for Breezy: add its own `ACTION_UPDATE_NOTIFIER` to `<queries>`.
 - Publishing the bridge: rename to something neutral (e.g. "Weather Bridge for KWGT"),
   keep "unofficial" note; MDI icons are Apache-2.0, Manrope OFL (`presets/Manrope-OFL.txt`).

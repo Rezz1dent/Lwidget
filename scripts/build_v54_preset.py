@@ -4,10 +4,10 @@
 Usage: build_v54_preset.py BASE_v50.kwgt FONTS_DIR OUT.kwgt
 
 Starts from the hand-tuned v50 (presets/Breezy_Minimal_v50__Manrope__control.kwgt):
-- temperature and icon as in v50, today's range in small type under the icon;
+- temperature and icon as in v50;
 - left middle row: "Четверг, 15 октября" (smaller for long names);
 - bottom left: next alarm, then the next sunset/sunrise (KWGT ai(), its own location);
-- bottom right: calendar icon + tomorrow's range, then the umbrella + percent.
+- bottom right: today's range, calendar icon + tomorrow's range, then the umbrella.
 
 Rows are stack groups: KWGT lays the parts out by their real width, so the gaps stay
 even without width estimates. The umbrella group is hidden with config_visible = REMOVE,
@@ -22,14 +22,12 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v54 • Manrope"
+TITLE = "Breezy Minimal v55 • Manrope"
 MDI = "iconify://mdi?name=Material%20Design%20Icons"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
          "Manrope-Regular"]
-ASCENT, CAP = 1.066, 0.72
 ROW_ICON = 22.0
-RANGE_SIZE = 17.0
 
 DATE = '$tc(cap, df("EEEE")) + df(", d MMMM")$'
 DATE_SIZE = '$if(tc(len, df("EEEE, d MMMM")) > 20, 20, 23)$'
@@ -83,8 +81,8 @@ def main(base, fonts_dir, target):
     info = preset["preset_info"]
     info.update(title=TITLE, id=str(uuid.uuid4()), ts=int(time.time() * 1000))
     info["description"] = (
-        "Manrope clock, Breezy temperature and icon with today's range under it; full date, "
-        "next alarm and sunrise/sunset on the left; tomorrow and the umbrella (Globals: "
+        "Manrope clock, Breezy temperature and icon; full date, "
+        "next alarm and sunrise/sunset on the left; today, tomorrow and the umbrella (Globals: "
         "umbrella_test, umbrella_min) on the right. Reboot the phone once after the first "
         "import so the home screen loads the fonts. Data from Breezy Bridge 1.4+.")
 
@@ -118,17 +116,12 @@ def main(base, fonts_dir, target):
     ], 2)
     umbrella["internal_toggles"] = {"config_visible": 10}
     umbrella["internal_formulas"] = {"config_visible": UMBRELLA_VISIBLE}
-    tomorrow = stack("Tomorrow + umbrella", [
+    tomorrow = stack("Today + tomorrow + umbrella", [
+        row_text(style, "Today range", "$br(breezy, today_range)$"),
         stack("Tomorrow", [row_icon(icon_style, "Tomorrow icon", "calendar-arrow-right"),
                            row_text(style, "Tomorrow range", TOMORROW)], 4),
         umbrella,
     ], 12, "TOPRIGHT", right_x, bottom_y, tomorrow_row.get("internal_events"))
-
-    # Today's range, small, right under the weather icon.
-    range_cap = icon["position_offset_y"] + icon["icon_size"] + 2
-    today = row_text(style, "Today • range under the icon", "$br(breezy, today_range)$")
-    today.update(text_size=RANGE_SIZE, position_anchor="TOPRIGHT", position_offset_x=right_x,
-                 position_offset_y=round(range_cap - (ASCENT - CAP) * RANGE_SIZE, 1))
 
     dropped = {"Today • Breezy high/low", "Row 3 • Tomorrow maximum/minimum",
                "Umbrella • percent (see Globals)", "Umbrella • icon (see Globals)"}
@@ -137,8 +130,6 @@ def main(base, fonts_dir, target):
         if item.get("internal_title") in dropped:
             continue
         result.append(item)
-        if item is icon:
-            result.append(today)
         if item is date_row:
             result.append(alarm_sun)
         if item is style:

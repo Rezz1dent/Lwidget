@@ -17,7 +17,7 @@ import time
 import uuid
 import zipfile
 
-TITLE = "Breezy Minimal v52 • Weekday"
+TITLE = "Breezy Minimal v53 • Weekday"
 MDI = "iconify://mdi?name=Material%20Design%20Icons"
 ROW_SIZE = 23.0
 ICON_SIZE = 22.0

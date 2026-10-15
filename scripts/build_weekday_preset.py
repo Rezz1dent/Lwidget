@@ -24,7 +24,7 @@ import zipfile
 
 from fontTools.ttLib import TTFont
 
-TITLE = "Breezy Minimal v51 • Weekday"
+TITLE = "Breezy Minimal v53 • Weekday"
 FONT = "kfile://org.kustom.provider/fonts/%s.ttf"
 FONTS = ["Manrope-ExtraBold-Tnum", "Manrope-ExtraLight-Tnum", "Manrope-SemiBold",
          "Manrope-Regular", "Manrope-Light-Spaced"]
@@ -40,10 +40,17 @@ EDGE = 20.0                 # right margin, as the other right-column elements
 CLOCK_TOP = 14.0            # cap top of the clock digits (hours: y -17, size 95)
 WORD_WIDTH = 200.0          # from the clock's right end (~252) + gap to the right edge
 WORD_SIZE = 34.0            # WEDNESDAY (5.81 em in Manrope Light) fits WORD_WIDTH
-TEMP_SIZE = 44.0
-ICON_SIZE = 34.0
+# Word centered between the clock's right end (x 252 from the left) and the right edge:
+# with the TOP anchor the offset from the root's center is (252 - EDGE) / 2 whatever
+# the root width is.
+CLOCK_RIGHT = 252.0
+WORD_CENTER_X = (CLOCK_RIGHT - EDGE) / 2
+CLOCK_BASELINE = 84.0       # bottom of the clock digits
+TEMP_SIZE = 46.0
+ICON_SIZE = 36.0
 RANGE_SIZE = 16.0
-GAP = 7.0
+# Under the cut: temperature + icon and today's range, with equal gaps between the cut,
+# the two rows and the clock's baseline (see main()).
 
 
 def shadow(blur):
@@ -101,14 +108,16 @@ def main(base, fonts_dir, target):
     weekday = text(
         "Weekday • English, same width every day",
         "$if(%s)$" % ", ".join('df(f)=%d, "%s"' % (i + 1, words[d]) for i, d in enumerate(DAYS)),
-        WORD_SIZE, WORD_FONT, SECONDARY, "TOPRIGHT", EDGE, top_for_cap(CLOCK_TOP, WORD_SIZE))
+        WORD_SIZE, WORD_FONT, SECONDARY, "TOP", WORD_CENTER_X, top_for_cap(CLOCK_TOP, WORD_SIZE),
+        text_align="CENTER")
     cut = {"internal_type": "ShapeModule", "internal_title": "Weekday • cut (erases lower half)",
            "shape_type": "RECT", "shape_width": WORD_WIDTH + 20, "shape_height": word_cap,
-           "paint_mode": "CLEAR", "position_anchor": "TOPRIGHT",
-           "position_offset_x": EDGE - 10, "position_offset_y": round(cut_y, 1)}
+           "paint_mode": "CLEAR", "position_anchor": "TOP",
+           "position_offset_x": WORD_CENTER_X, "position_offset_y": round(cut_y, 1)}
 
     # Current temperature + icon below the cut, today's range under them.
-    temp_cap = cut_y + GAP
+    gap = (CLOCK_BASELINE - cut_y - TEMP_SIZE * CAP - RANGE_SIZE * CAP) / 3
+    temp_cap = cut_y + gap
     temp = by_title["Row 1 • Breezy temperature"]
     temp.update(text_size=TEMP_SIZE, position_offset_x=EDGE + ICON_SIZE + 6,
                 position_offset_y=round(top_for_cap(temp_cap, TEMP_SIZE), 1))
@@ -116,7 +125,7 @@ def main(base, fonts_dir, target):
     icon = by_title["Row 1 • Current weather icon (Breezy, Iconify mdi)"]
     icon.update(icon_size=ICON_SIZE, position_offset_x=EDGE,
                 position_offset_y=round(temp_cap + TEMP_SIZE * CAP / 2 - ICON_SIZE / 2, 1))
-    range_cap = temp_cap + TEMP_SIZE * CAP + GAP
+    range_cap = temp_cap + TEMP_SIZE * CAP + gap
     today = text("Today • range under the temperature", "$br(breezy, today_range)$",
                  RANGE_SIZE, "Manrope-Regular", SECONDARY, "TOPRIGHT", EDGE,
                  top_for_cap(range_cap, RANGE_SIZE))
